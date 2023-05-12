@@ -1,0 +1,41 @@
+{
+    "GUIsettings_Directions": "",
+    
+    "SHOW_IN_GUI_ArucoTag_FLAG":1,
+    "SHOW_IN_GUI_CSVdataLogger_FLAG":1,
+    "SHOW_IN_GUI_MyPrint_FLAG":0,
+    "SHOW_IN_GUI_MyPlotterPureTkinterStandAloneProcess_FLAG":1,
+
+    "GUItitleString": "test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class",
+    "GUI_RootAfterCallbackInterval_Milliseconds": 30,
+    "root_Xpos": 950,
+    "root_Ypos": 0,
+    "root_width": 970,
+    "root_height": 1020,
+    "GUIbuttonWidth": 18,
+    "GUIbuttonPadX": 5,
+    "GUIbuttonPadY": 5,
+    "GUIbuttonFontSize": 18,
+    
+    "GUI_ROW_ArucoTagDetection": 0,
+    "GUI_COLUMN_ArucoTagDetection": 0,
+    "GUI_PADX_ArucoTagDetection": 1,
+    "GUI_PADY_ArucoTagDetection": 1,
+    "GUI_ROWSPAN_ArucoTagDetection": 1,
+    "GUI_COLUMNSPAN_ArucoTagDetection": 1,
+
+    "GUI_ROW_CSVdataLogger": 1,
+    "GUI_COLUMN_CSVdataLogger": 0,
+    "GUI_PADX_CSVdataLogger": 1,
+    "GUI_PADY_CSVdataLogger": 1,
+    "GUI_ROWSPAN_CSVdataLogger": 1,
+    "GUI_COLUMNSPAN_CSVdataLogger": 1,
+
+    "GUI_ROW_MyPrint": 2,
+    "GUI_COLUMN_MyPrint": 0,
+    "GUI_PADX_MyPrint": 1,
+    "GUI_PADY_MyPrint": 1,
+    "GUI_ROWSPAN_MyPrint": 1,
+    "GUI_COLUMNSPAN_MyPrint": 1
+}
+
