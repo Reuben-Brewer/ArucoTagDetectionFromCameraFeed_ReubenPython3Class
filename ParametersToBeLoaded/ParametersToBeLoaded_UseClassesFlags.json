@@ -1,0 +1,9 @@
+{
+    "UseClassesFlags_Directions": "Values may only be 0 or 1.",
+    "USE_ArucoTag_FLAG":1,
+    "USE_CSVdataLogger_FLAG":1,
+    "USE_MyPlotterPureTkinterStandAloneProcess_FLAG":0,
+    "USE_MyPrint_FLAG":1,
+    "USE_GUI_FLAG":1
+}
+
