@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision F, 09/24/2023
+Software Revision G, 02/02/2025
 
-Verified working on: Python 3.8 for Windows 10 64-bit (haven't tested on Ubuntu, Raspberry Pi, or Mac yet).
+Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
 
 __author__ = 'reuben.brewer'
@@ -22,40 +22,28 @@ import datetime
 from collections import OrderedDict
 from copy import deepcopy
 import glob #For getting a list of files in a directory with a certain extension
+import subprocess
 
 import pandas
 #########################################################
 
 #########################################################
-#MUST USE VERSION 224 (https://stackoverflow.com/questions/58612306/how-to-fix-importerror-dll-load-failed-while-importing-win32api/60611014#60611014)
-#Latest version is 228 but gives us a DLL error.
-#"pip install pywin32==224"
 import win32com.client #for commanding Excel as a program
 #########################################################
 
 #########################################################
 #For writing excel files.
-#"pip install xlwt==1.2.0"
 import xlwt
 #########################################################
 
 #########################################################
 #For copying excel file when we create the excel file. HAVE TO INSTALL SEPARATELY FROM XLWT/XLRD.
-#"pip install xlutils==1.7.1"
 from xlutils.copy import copy
-#########################################################
-
-#########################################################
-#For reading excel files.
-#"pip install xlrd==1.0.0"
-import xlrd
 #########################################################
 
 #########################################################
 #http://xlsxwriter.readthedocs.io/chart.html FOR MAKING CHARTS
 #XlsxWriter can only create new files. It cannot read or modify existing files. Can only handle xlsx files, not xls
-#"pip install xlsxwriter==0.9.6" verified working, but doesn't support setting the chart size.
-#"pip install xlsxwriter==1.3.3" INSTALLED 08/28/20 (had to manually delete older version from /lib/site-packages because it was distutils-managed. Works overall, but the function ".set_size" doesn't do anything.
 import xlsxwriter
 #########################################################
 
@@ -68,37 +56,40 @@ def OpenXLSsndCopyDataToLists(FileName_full_path):
     try:
 
         ##########################################################################################################
-        xlrd_workbook = xlrd.open_workbook(FileName_full_path)
+        workbook = pandas.ExcelFile(FileName_full_path)
 
-        sheet_names = xlrd_workbook.sheet_names()
-        #print('Sheet Names', sheet_names)
+        sheet = workbook.parse("Sheet1")
 
-        xlrd_sheet = xlrd_workbook.sheet_by_name(sheet_names[0])
-        #print(xlrd_sheet.name)
+        NumberOfRows = sheet.shape[0]
+        #print("NumberOfRows: " + str(NumberOfRows))
 
-        ##########################################################################################################
+        NumberOfColumns = sheet.shape[1]
+        #print("NumberOfColumns: " + str(NumberOfColumns))
 
-        ##########################################################################################################
-        header_variable_name_list = []
-        ListOfColumnDataLists = []
-        for column in range(0, xlrd_sheet.ncols):  # Iterate through columns
-            cell_value = xlrd_sheet.cell_value(0, column)  # Get cell object by row, col
-            cell_value_as_string = str(cell_value).strip()
-            header_variable_name_list.append(cell_value_as_string)
-            ListOfColumnDataLists.append([])
+        header_variable_name_list = sheet.columns.values.tolist()
+        for index, VariableName in enumerate(header_variable_name_list):
+            header_variable_name_list[index] = VariableName.strip()
         print("Detected the following variable names: " + str(header_variable_name_list))
-        #print(ListOfColumnDataLists)
         ##########################################################################################################
 
         ##########################################################################################################
-        for row in range(1, xlrd_sheet.nrows): # Iterate through rows starting at index 1 so that we don't capture the header
-            for column in range(0, xlrd_sheet.ncols):  # Iterate through columns
-                cell_value = xlrd_sheet.cell_value(row, column)  # Get cell object by row, col
+        #DataFrame.at, Access a single value for a row/column pair by label.
+        #DataFrame.iat, Access a single value for a row/column pair by integer position.
+
+        ListOfColumnDataLists = []
+        for column in range(0, NumberOfColumns):  # Iterate through columns
+            ListOfColumnDataLists.append([])
+        ##########################################################################################################
+
+        ##########################################################################################################
+        for row in range(0, NumberOfRows): # Iterate through rows
+            for column in range(0, NumberOfColumns):  # Iterate through columns
+                cell_value = sheet.iat[row, column]  # Get cell object by row, col
                 ListOfColumnDataLists[column].append(cell_value)
         ##########################################################################################################
 
         ##########################################################################################################
-        for column in range(0, xlrd_sheet.ncols):  # Iterate through columns
+        for column in range(0, NumberOfColumns):  # Iterate through columns
             DataOrderedDict[header_variable_name_list[column]] = ListOfColumnDataLists[column]
         ##########################################################################################################
 
@@ -117,86 +108,105 @@ def OpenXLSsndCopyDataToLists(FileName_full_path):
 ##########################################################################################################
 def CreateExcelChart(FileName_to_save_full_path, DataOrderedDictToWrite):
 
-    #print("FileName_to_save_full_path: " + FileName_to_save_full_path)
-
-    workbook = xlsxwriter.Workbook(FileName_to_save_full_path)
-    worksheet = workbook.add_worksheet()
-
-    ##########################################################################################################
-    alphabetString = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ"]
-    numerical_index = 0
-    NumberOfDataRows = -1
-    for key in DataOrderedDictToWrite:
-        starting_cell_string_identifier = alphabetString[numerical_index] + "1"
-        #print("DataOrderedDictToWrite[key]: " + str(DataOrderedDictToWrite[key]))
-        worksheet.write_column(starting_cell_string_identifier, [key] + DataOrderedDictToWrite[key]) #
-        NumberOfDataRows = len(DataOrderedDictToWrite[key])
-        worksheet.set_column(numerical_index, numerical_index, 20) #set column width of current column to 20
-        numerical_index = numerical_index + 1
-    ##########################################################################################################
-
-    Time_ExcelColumnLetter = "A"
-
-    X0_ExcelColumnLetter = "B"
-
-    Y0_ExcelColumnLetter = "C"
+    try:
     
-    Z0_ExcelColumnLetter = "D"
+        #print("FileName_to_save_full_path: " + FileName_to_save_full_path)
 
-    X1_ExcelColumnLetter = "E"
+        CSVdataLogger_VariableNamesForHeaderList = ["Time (S)",
+                                                    "X0",
+                                                    "Y0",
+                                                    "Z0",
+                                                    "X1",
+                                                    "Y1",
+                                                    "Z1",
+                                                    "LineFromPrimaryMarkerToSecondaryMarker_DistanceMM",
+                                                    "LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground"]
     
-    Y1_ExcelColumnLetter = "F"
-
-    Z1_ExcelColumnLetter = "G"
+        workbook = xlsxwriter.Workbook(FileName_to_save_full_path)
+        worksheet = workbook.add_worksheet()
     
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_ExcelColumnLetter = "H"
+        ##########################################################################################################
+        AlphabetStringList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+                              "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ",
+                              "BA", "BB", "BC", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BK", "BL", "BM", "BN", "BO", "BP", "BQ", "BR", "BS", "BT", "BU", "BV", "BW", "BX", "BY", "BZ", ]
+
+        numerical_index = 0
+        NumberOfDataRows = -1
+        for key in DataOrderedDictToWrite:
+            starting_cell_string_identifier = AlphabetStringList[numerical_index] + "1"
+            #print("DataOrderedDictToWrite[key]: " + str(DataOrderedDictToWrite[key]))
+            worksheet.write_column(starting_cell_string_identifier, [key] + DataOrderedDictToWrite[key]) #
+            NumberOfDataRows = len(DataOrderedDictToWrite[key])
+            worksheet.set_column(numerical_index, numerical_index, 20) #set column width of current column to 20
+            numerical_index = numerical_index + 1
+        ##########################################################################################################
+
+        ###########################################################################################################
+        VariableNameVsExcelColumnLetterDict = dict()
+        for Index, VariableName in enumerate(CSVdataLogger_VariableNamesForHeaderList):
+            VariableNameVsExcelColumnLetterDict[VariableName] = AlphabetStringList[Index]
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        VariableNamesListToInludeOnSinglePlotVsTime = ["X0"]
+
+        ##########################################################################################################
+        LengthMax = 31 - 10  # Excel worksheet name must be <= 31 chars.
+        VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited = list()
+        SumOfAllVariableNamesAsString = ""
+        for index, VariableName in enumerate(VariableNamesListToInludeOnSinglePlotVsTime):
+            if len(VariableName) >= LengthMax: #Limit each, individual name for when it's printed on the plot
+                VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited.append(VariableName[0:LengthMax])
+            else:
+                VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited.append(VariableName)
+
+            if index != len(VariableNamesListToInludeOnSinglePlotVsTime) - 1:
+                SumOfAllVariableNamesAsString = SumOfAllVariableNamesAsString + VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited[index] + ", "
+            else:
+                SumOfAllVariableNamesAsString = SumOfAllVariableNamesAsString + VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited[index]
+
+        SumOfAllVariableNamesAsString = SumOfAllVariableNamesAsString[0:LengthMax] #Limit the overall Plot title length
+        ##########################################################################################################
+
+        print("VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited: " + str(VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited))
+        print("SumOfAllVariableNamesAsString: " + str(SumOfAllVariableNamesAsString) + ", Length = " + str(len(SumOfAllVariableNamesAsString)))
+
+        VariableName_vs_Time_Xaxis_Chart_sheet = workbook.add_chartsheet(SumOfAllVariableNamesAsString + " vs Time")
+        VariableName_vs_Time_Xaxis_Chart = workbook.add_chart({'type': 'scatter'}) #http://xlsxwriter.readthedocs.io/example_chart_scatter.html
+
+        ##########################################################################################################
+        for index, VariableName in enumerate(VariableNamesListToInludeOnSinglePlotVsTime):
+            VariableName_vs_Time_Xaxis_Chart.add_series({'name': VariableNamesListToInludeOnSinglePlotVsTime_NameLengthLimited[index] + ' vs Time','categories': "=Sheet1!$" + VariableNameVsExcelColumnLetterDict["Time (S)"] + "$2:$" + VariableNameVsExcelColumnLetterDict["Time (S)"] + "$"+str(NumberOfDataRows+1),'values': "=Sheet1!$" + VariableNameVsExcelColumnLetterDict[VariableName] + "$2:$" + VariableNameVsExcelColumnLetterDict[VariableName] + "$" + str(NumberOfDataRows+1)}) #X VALUES FIRST, THEN Y
+        ##########################################################################################################
+
+        VariableName_vs_Time_Xaxis_Chart.set_title ({'name': SumOfAllVariableNamesAsString + ' vs Time'})
+        VariableName_vs_Time_Xaxis_Chart.set_x_axis({'name': 'Time (S)'})
+        VariableName_vs_Time_Xaxis_Chart.set_y_axis({'name': SumOfAllVariableNamesAsString})
+        VariableName_vs_Time_Xaxis_Chart_sheet.set_chart(VariableName_vs_Time_Xaxis_Chart)
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
     
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_ExcelColumnLetter = "I"
+        workbook.close()
+        time.sleep(0.05)
+    
+        pywin32_FileName_xls = FileName_to_save_full_path
+        pywin32_FileName_xls = pywin32_FileName_xls.replace("/", "\\") #This line is needed or else the Excel file will give you an error.
 
-    Y0_vs_X0_Chart_sheet = workbook.add_chartsheet("Y0_vs_X0")
-    Y0_vs_X0_Chart = workbook.add_chart({'type': 'scatter'}) #http://xlsxwriter.readthedocs.io/example_chart_scatter.html
-    Y0_vs_X0_Chart.add_series({'name': 'Y0_vs_X0','categories': "=Sheet1!$" + X0_ExcelColumnLetter + "$2:$" + X0_ExcelColumnLetter + "$"+str(NumberOfDataRows+1),'values': "=Sheet1!$" + Y0_ExcelColumnLetter + "$2:$" + Y0_ExcelColumnLetter + "$" + str(NumberOfDataRows+1)}) #X VALUES FIRST, THEN Y
-    Y0_vs_X0_Chart.set_title ({'name': 'Y0 vs X0'})
-    Y0_vs_X0_Chart.set_x_axis({'name': 'X0'})
-    Y0_vs_X0_Chart.set_y_axis({'name': 'Y0'})
-    Y0_vs_X0_Chart_sheet.set_chart(Y0_vs_X0_Chart)
-
-    Y1_vs_X1_Chart_sheet = workbook.add_chartsheet("Y1_vs_X1")
-    Y1_vs_X1_Chart = workbook.add_chart({'type': 'scatter'}) #http://xlsxwriter.readthedocs.io/example_chart_scatter.html
-    Y1_vs_X1_Chart.add_series({'name': 'Y1_vs_X1','categories': "=Sheet1!$" + X1_ExcelColumnLetter + "$2:$" + X1_ExcelColumnLetter + "$"+str(NumberOfDataRows+1),'values': "=Sheet1!$" + Y1_ExcelColumnLetter + "$2:$" + Y1_ExcelColumnLetter + "$" + str(NumberOfDataRows+1)}) #X VALUES FIRST, THEN Y
-    Y1_vs_X1_Chart.set_title ({'name': 'Y1 vs X1'})
-    Y1_vs_X1_Chart.set_x_axis({'name': 'X1'})
-    Y1_vs_X1_Chart.set_y_axis({'name': 'Y1'})
-    Y1_vs_X1_Chart_sheet.set_chart(Y1_vs_X1_Chart)
-   
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart_sheet = workbook.add_chartsheet("LineDistanceMM_vs_Time")
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart = workbook.add_chart({'type': 'scatter'}) #http://xlsxwriter.readthedocs.io/example_chart_scatter.html
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart.add_series({'name': 'LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time','categories': "=Sheet1!$" + Time_ExcelColumnLetter + "$2:$" + Time_ExcelColumnLetter + "$"+str(NumberOfDataRows+1),'values': "=Sheet1!$" + LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_ExcelColumnLetter + "$2:$" + LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_ExcelColumnLetter + "$" + str(NumberOfDataRows+1)}) #X VALUES FIRST, THEN Y
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart.set_title ({'name': 'LineFromPrimaryMarkerToSecondaryMarker_DistanceMM vs Time'})
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart.set_x_axis({'name': 'Time'})
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart.set_y_axis({'name': 'LineFromPrimaryMarkerToSecondaryMarker_DistanceMM'})
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart_sheet.set_chart(LineFromPrimaryMarkerToSecondaryMarker_DistanceMM_vs_Time_Chart)
-
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart_sheet = workbook.add_chartsheet("LineAngleWRTground_vs_Time")
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart = workbook.add_chart({'type': 'scatter'}) #http://xlsxwriter.readthedocs.io/example_chart_scatter.html
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart.add_series({'name': 'LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time','categories': "=Sheet1!$" + Time_ExcelColumnLetter + "$2:$" + Time_ExcelColumnLetter + "$"+str(NumberOfDataRows+1),'values': "=Sheet1!$" + LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_ExcelColumnLetter + "$2:$" + LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_ExcelColumnLetter + "$" + str(NumberOfDataRows+1)}) #X VALUES FIRST, THEN Y
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart.set_title ({'name': 'LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground vs Time'})
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart.set_x_axis({'name': 'Time'})
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart.set_y_axis({'name': 'LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground'})
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart_sheet.set_chart(LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground_vs_Time_Chart)
-   
-    workbook.close()
-    time.sleep(0.05)
-
-    pywin32_FileName_xls = FileName_to_save_full_path
-    pywin32_FileName_xls = pywin32_FileName_xls.replace("/", "\\") #This line is needed or else the Excel file will give you an error.
-
-    xl = win32com.client.Dispatch("Excel.Application")
-    xl.DisplayAlerts = False
-    wb = xl.Workbooks.Open(pywin32_FileName_xls)
-    wb.SaveAs(pywin32_FileName_xls, FileFormat = 56)
-    wb.Close()
-    xl.Quit()
+        xl = win32com.client.Dispatch("Excel.Application")
+        xl.DisplayAlerts = False
+        wb = xl.Workbooks.Open(pywin32_FileName_xls)
+        wb.SaveAs(pywin32_FileName_xls, FileFormat = 56)
+        wb.Close()
+        xl.Quit()
+        
+    except:
+        exceptions = sys.exc_info()[0]
+        print("CreateExcelChart, exceptions: %s" % exceptions)
+        traceback.print_exc()
 ##########################################################################################################
 ##########################################################################################################
 
@@ -230,11 +240,11 @@ if __name__ == '__main__':
             FileDirectory = ARGV_1
 
         else:
-            FileDirectory = os.getcwd()
+            FileDirectory = os.getcwd() + "\\CSVfiles"
 
     except:
         exceptions = sys.exc_info()[0]
-        print("Parsing ARGV_1, exceptions: %s" % exceptions, 0)
+        print("Parsing ARGV_1, exceptions: %s" % exceptions)
         traceback.print_exc()
 
     print("Using FileDirectory = " + str(FileDirectory))
@@ -257,6 +267,8 @@ if __name__ == '__main__':
     #########################################################
     FileSuffixForChartFile = "_with_chart.xls"
 
+    FileDirectory = "C:\\CSVfiles"
+
     FileList_csv = glob.glob(FileDirectory + '/*.csv')
     FileList_xls = glob.glob(FileDirectory + '/*.xls')
 
@@ -266,7 +278,7 @@ if __name__ == '__main__':
     #########################################################
     
     ##########################################################################################################
-    for FileName_csv in FileList_csv:
+    for index, FileName_csv in enumerate(FileList_csv):
         FileName_xls = FileName_csv.replace(".csv", ".xls")
         FileName_WITH_CHART_xls = FileName_csv.replace(".csv", FileSuffixForChartFile)
 
@@ -274,7 +286,7 @@ if __name__ == '__main__':
         if FileName_xls not in FileList_xls: #Make sure we haven't already converted this csv to a xls file.
             print("Converting CSV file to xls file for " + FileName_csv)
             read_file = pandas.read_csv(FileName_csv)
-            read_file.to_excel(FileName_xls, index=None, header=True)
+            read_file.to_excel(FileName_xls, index=None, header=True, engine="xlsxwriter")
         else:
             print("xls file '" + FileName_xls + "' already exists so skipping csv-xls conversion.")
         ################################
@@ -292,6 +304,12 @@ if __name__ == '__main__':
             print("xls chart file already exists so skipping for " + FileName_csv)
         ################################
 
+        ################################
+        if index == len(FileList_csv) - 1: #The last file.
+            cmd = "start Excel \"" + FileName_WITH_CHART_xls + "\""
+            print("cmd: " + cmd)
+            subprocess.Popen(cmd, shell=True)
+        ################################
 
     ##########################################################################################################
 

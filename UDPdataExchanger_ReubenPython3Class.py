@@ -6,81 +6,130 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision H, 11/05/2024
+Software Revision E, 02/02/2024
 
-Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Buster (may work on Mac in non-GUI mode, but haven't tested yet).
+Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
 
 __author__ = 'reuben.brewer'
 
-###########################################################
-from LowPassFilter_ReubenPython2and3Class import *
-###########################################################
+##########################################
+from LowPassFilterForDictsOfLists_ReubenPython2and3Class import *
+##########################################
 
-###########################################################
+##########################################
 import os
 import sys
 import platform
 import time
 import datetime
-import math
 import collections
 from copy import * #for deepcopy
 import inspect #To enable 'TellWhichFileWereIn'
 import threading
 import traceback
-###########################################################
+import socket
+##########################################
 
-###########################################################
+########################################## https://stackoverflow.com/questions/54370322/how-to-limit-the-number-of-float-digits-jsonencoder-produces
+##########################################
+import json
+
+##########################################
+class RoundingFloat(float):
+    K = 3
+    __repr__ = staticmethod(lambda x, N=K: format(x, '.' + str(N) + 'f'))
+##########################################
+
+##########################################
+json.encoder.c_make_encoder = None
+if hasattr(json.encoder, 'FLOAT_REPR'):
+    json.encoder.FLOAT_REPR = RoundingFloat.__repr__ #Python 2
+else:
+    json.encoder.float = RoundingFloat #Python 3
+##########################################
+
+##########################################
+##########################################
+
+##########################################
 from tkinter import *
 import tkinter.font as tkFont
 from tkinter import ttk
-###########################################################
+##########################################
 
-###########################################################
+##########################################
 import queue as Queue
-###########################################################
+##########################################
 
-###########################################################
-from future.builtins import input as input
-########################################################### "sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
-
-###########################################################
+##########################################
 import platform
 if platform.system() == "Windows":
     import ctypes
     winmm = ctypes.WinDLL('winmm')
     winmm.timeBeginPeriod(1) #Set minimum timer resolution to 1ms so that time.sleep(0.001) behaves properly.
-###########################################################
+##########################################
 
-class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
+#########################################################
+class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
     def __init__(self, setup_dict): #Subclass the Tkinter Frame
 
-        print("#################### CSVdataLogger_ReubenPython3Class __init__ starting. ####################")
+        print("#################### UDPdataExchanger_ReubenPython3Class __init__ starting. ####################")
 
         #########################################################
         #########################################################
+        self.PrintAllReceivedSerialMessageForDebuggingFlag = 0 #unicorn
+
         self.EXIT_PROGRAM_FLAG = 0
         self.OBJECT_CREATED_SUCCESSFULLY_FLAG = 0
         self.EnableInternal_MyPrint_Flag = 0
         self.MainThread_still_running_flag = 0
+        #########################################################
+        #########################################################
 
+        #########################################################
+        #########################################################
         self.CurrentTime_CalculatedFromMainThread = -11111.0
-        self.StartingTime_CalculatedFromMainThread = -11111.0
         self.LastTime_CalculatedFromMainThread = -11111.0
+        self.StartingTime_CalculatedFromMainThread = -11111.0
         self.DataStreamingFrequency_CalculatedFromMainThread = -11111.0
+        self.DataStreamingFrequency_CalculatedFromMainThread_2 = -11111.0
         self.DataStreamingDeltaT_CalculatedFromMainThread = -11111.0
 
-        self.CSVfile_FilepathFull = ""
+        self.CurrentTime_CalculateMeasurementTorqueDerivative = -11111.0
+        self.LastTime_CalculateMeasurementTorqueDerivative = -11111.0
+        self.DataStreamingDeltaT_CalculateMeasurementTorqueDerivative = -11111.0
+        #########################################################
+        #########################################################
 
-        self.CSVfile_SaveFlag = 0
-        self.CSVfile_SaveFlag_NeedsToBeChangedFlag = 0
-        self.AcceptNewDataFlag = 0
+        #########################################################
+        #########################################################
+        self.UDP_PortIsOpenFlag = 0
+        self.UDP_TimeoutCounter = 0
 
+        self.UDP_RxPacketsReceivedCounter = 0
+        self.UDP_TxPacketsTransmittedCounter = 0
+
+        self.UDP_RxLastTimePacketWasReceived = -11111.0
+        self.WatchdogTimerExpirationState = 1
+
+        self.DataStream_State = 1 #Starts out communicating data
+
+        self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag = 0
+
+        self.JSONstringToTx_Queue = Queue.Queue()
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
         self.MostRecentDataDict = dict()
+
+        self.MostRecentDataDict["UDP_TxPacketsTransmittedCounter"] = self.UDP_TxPacketsTransmittedCounter
+        self.MostRecentDataDict["UDP_RxPacketsReceivedCounter"] = self.UDP_RxPacketsReceivedCounter
         #########################################################
         #########################################################
 
@@ -102,7 +151,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         else:
             self.my_platform = "other"
 
-        print("CSVdataLogger_ReubenPython3Class __init__: The OS platform is: " + self.my_platform)
+        print("UDPdataExchanger_ReubenPython3Class __init__: The OS platform is: " + self.my_platform)
         #########################################################
         #########################################################
 
@@ -118,7 +167,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.USE_GUI_FLAG = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
+            print("UDPdataExchanger_ReubenPython3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
             #########################################################
             #########################################################
 
@@ -127,7 +176,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             if "root" in self.GUIparametersDict:
                 self.root = self.GUIparametersDict["root"]
             else:
-                print("CSVdataLogger_ReubenPython3Class __init__: Error, must pass in 'root'")
+                print("UDPdataExchanger_ReubenPython3Class __init__: ERROR, must pass in 'root'")
                 return
             #########################################################
             #########################################################
@@ -139,7 +188,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.EnableInternal_MyPrint_Flag = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: EnableInternal_MyPrint_Flag: " + str(self.EnableInternal_MyPrint_Flag))
+            print("UDPdataExchanger_ReubenPython3Class __init__: EnableInternal_MyPrint_Flag: " + str(self.EnableInternal_MyPrint_Flag))
             #########################################################
             #########################################################
 
@@ -150,7 +199,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.PrintToConsoleFlag = 1
 
-            print("CSVdataLogger_ReubenPython3Class __init__: PrintToConsoleFlag: " + str(self.PrintToConsoleFlag))
+            print("UDPdataExchanger_ReubenPython3Class __init__: PrintToConsoleFlag: " + str(self.PrintToConsoleFlag))
             #########################################################
             #########################################################
 
@@ -161,7 +210,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.NumberOfPrintLines = 10
 
-            print("CSVdataLogger_ReubenPython3Class __init__: NumberOfPrintLines: " + str(self.NumberOfPrintLines))
+            print("UDPdataExchanger_ReubenPython3Class __init__: NumberOfPrintLines: " + str(self.NumberOfPrintLines))
             #########################################################
             #########################################################
 
@@ -172,7 +221,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.UseBorderAroundThisGuiObjectFlag = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: UseBorderAroundThisGuiObjectFlag: " + str(self.UseBorderAroundThisGuiObjectFlag))
+            print("UDPdataExchanger_ReubenPython3Class __init__: UseBorderAroundThisGuiObjectFlag: " + str(self.UseBorderAroundThisGuiObjectFlag))
             #########################################################
             #########################################################
 
@@ -183,7 +232,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_ROW = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_ROW: " + str(self.GUI_ROW))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_ROW: " + str(self.GUI_ROW))
             #########################################################
             #########################################################
 
@@ -194,7 +243,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_COLUMN = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_COLUMN: " + str(self.GUI_COLUMN))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_COLUMN: " + str(self.GUI_COLUMN))
             #########################################################
             #########################################################
 
@@ -205,7 +254,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_PADX = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_PADX: " + str(self.GUI_PADX))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_PADX: " + str(self.GUI_PADX))
             #########################################################
             #########################################################
 
@@ -216,18 +265,17 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_PADY = 0
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_PADY: " + str(self.GUI_PADY))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_PADY: " + str(self.GUI_PADY))
             #########################################################
             #########################################################
 
-            #########################################################
-            #########################################################
+            ##########################################
             if "GUI_ROWSPAN" in self.GUIparametersDict:
                 self.GUI_ROWSPAN = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("GUI_ROWSPAN", self.GUIparametersDict["GUI_ROWSPAN"], 1.0, 1000.0))
             else:
                 self.GUI_ROWSPAN = 1
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_ROWSPAN: " + str(self.GUI_ROWSPAN))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_ROWSPAN: " + str(self.GUI_ROWSPAN))
             #########################################################
             #########################################################
 
@@ -238,7 +286,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_COLUMNSPAN = 1
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_COLUMNSPAN: " + str(self.GUI_COLUMNSPAN))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_COLUMNSPAN: " + str(self.GUI_COLUMNSPAN))
             #########################################################
             #########################################################
 
@@ -249,16 +297,16 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             else:
                 self.GUI_STICKY = "w"
 
-            print("CSVdataLogger_ReubenPython3Class __init__: GUI_STICKY: " + str(self.GUI_STICKY))
+            print("UDPdataExchanger_ReubenPython3Class __init__: GUI_STICKY: " + str(self.GUI_STICKY))
             #########################################################
             #########################################################
 
         else:
             self.GUIparametersDict = dict()
             self.USE_GUI_FLAG = 0
-            print("CSVdataLogger_ReubenPython3Class __init__: No GUIparametersDict present, setting USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
+            print("UDPdataExchanger_ReubenPython3Class __init__: No GUIparametersDict present, setting USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
 
-        #print("CSVdataLogger_ReubenPython3Class __init__: GUIparametersDict: " + str(self.GUIparametersDict))
+        #print("UDPdataExchanger_ReubenPython3Class __init__: GUIparametersDict: " + str(self.GUIparametersDict))
         #########################################################
         #########################################################
 
@@ -269,18 +317,19 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         else:
             self.NameToDisplay_UserSet = ""
 
-        print("CSVdataLogger_ReubenPython3Class __init__: NameToDisplay_UserSet: " + str(self.NameToDisplay_UserSet))
+        print("UDPdataExchanger_ReubenPython3Class __init__: NameToDisplay_UserSet" + str(self.NameToDisplay_UserSet))
         #########################################################
         #########################################################
 
         #########################################################
         #########################################################
-        if "SaveOnStartupFlag" in setup_dict:
-            self.SaveOnStartupFlag = self.PassThrough0and1values_ExitProgramOtherwise("SaveOnStartupFlag", setup_dict["SaveOnStartupFlag"])
+        if "WatchdogTimerExpirationDurationSeconds" in setup_dict:
+            self.WatchdogTimerExpirationDurationSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("WatchdogTimerExpirationDurationSeconds", setup_dict["WatchdogTimerExpirationDurationSeconds"], 0.000, 100000.0)
+
         else:
-            self.SaveOnStartupFlag = 0
+            self.WatchdogTimerExpirationDurationSeconds = 0.25
 
-        print("CSVdataLogger_ReubenPython3Class __init__: SaveOnStartupFlag: " + str(self.SaveOnStartupFlag))
+        print("UDPdataExchanger_ReubenPython3Class __init__: WatchdogTimerExpirationDurationSeconds: " + str(self.WatchdogTimerExpirationDurationSeconds))
         #########################################################
         #########################################################
 
@@ -290,7 +339,27 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #########################################################
         #########################################################
 
-        self.DataQueue = Queue.Queue()
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings = dict([("DataStreamingFrequency_CalculatedFromMainThread", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", 0.05)]))])
+
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict = dict([("DictOfVariableFilterSettings", self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings)])
+
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject = LowPassFilterForDictsOfLists_ReubenPython2and3Class(self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict)
+        self.LOWPASSFILTER_OPEN_FLAG = self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+        #########################################################
+
+        #########################################################
+        if self.LOWPASSFILTER_OPEN_FLAG != 1:
+            print("UDPdataExchanger_ReubenPython3Class __init__: Failed to open LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.")
+            return
+        #########################################################
+
+        #########################################################
+        #########################################################
 
         #########################################################
         #########################################################
@@ -301,7 +370,22 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #########################################################
 
         #########################################################
-        ######################################################### DON'T NEED THIS WHEN THERE'S A CALLBACK AND NOTHING TO DO IN THE MainThread!
+        #########################################################
+        try:
+            self.MostRecentDataDict["UDP_RxOrTxRole"] = self.UDP_RxOrTxRole
+
+            self.OpenUDPsocket()
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("UDPdataExchanger_ReubenPython3Class __init__: Exceptions: %s" % exceptions)
+            traceback.print_exc()
+            return
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
         self.MainThread_ThreadingObject = threading.Thread(target=self.MainThread, args=())
         self.MainThread_ThreadingObject.start()
         #########################################################
@@ -314,7 +398,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #########################################################
         #########################################################
 
-        ######################################################### Give the Phidgets board a chance to open before sending commands to it.
+        #########################################################
         #########################################################
         time.sleep(0.25)
         #########################################################
@@ -331,61 +415,76 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
+    def __del__(self):
+        pass
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     def UpdateSetupDictParameters(self, setup_dict):
 
         #########################################################
         #########################################################
-        if "CSVfile_DirectoryPath" in setup_dict:
-            self.CSVfile_DirectoryPath = str(setup_dict["CSVfile_DirectoryPath"])
-        else:
-            self.CSVfile_DirectoryPath = os.getcwd()
+        if "UDP_RxOrTxRole" in setup_dict:
+            self.UDP_RxOrTxRole = str(setup_dict["UDP_RxOrTxRole"])
 
-        print("CSVdataLogger_ReubenPython3Class __init__: CSVfile_DirectoryPath: " + str(self.CSVfile_DirectoryPath))
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
-        if "FileNamePrefix" in setup_dict:
-            self.FileNamePrefix = str(setup_dict["FileNamePrefix"])
-        else:
-            self.FileNamePrefix = "CSVdataLogger_"
-
-        print("CSVdataLogger_ReubenPython3Class __init__: FileNamePrefix: " + str(self.FileNamePrefix))
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
-        self.VariableNamesForHeaderList = list()
-        self.VariablesHeaderStringCommaDelimited = ""
-
-        if "VariableNamesForHeaderList" in setup_dict:
-            VariableNamesForHeaderList_TEMP = setup_dict["VariableNamesForHeaderList"]
-
-            if isinstance(VariableNamesForHeaderList_TEMP, list) == 1:
-
-                for index, VariableName in enumerate(VariableNamesForHeaderList_TEMP):
-                    self.VariablesHeaderStringCommaDelimited = self.VariablesHeaderStringCommaDelimited + str(VariableName)
-                    self.VariableNamesForHeaderList.append(str(VariableName))
-
-                    ###################################################
-                    if index < len(VariableNamesForHeaderList_TEMP) - 1:
-                        self.VariablesHeaderStringCommaDelimited = self.VariablesHeaderStringCommaDelimited + ", "
-
-                    else:
-                        self.VariablesHeaderStringCommaDelimited = self.VariablesHeaderStringCommaDelimited + "\n"
-                    ###################################################
-
-            else:
-                print("CSVdataLogger_ReubenPython3Class __init__: Error, 'VariableNamesForHeaderList' must be a list.")
+            if self.UDP_RxOrTxRole not in ["rx", "tx"]:
+                print("UDPdataExchanger_ReubenPython3Class __init__: Error: UDP_RxOrTxRole must be 'rx' or 'tx'.")
                 return
 
-        #else:
-        #    print("CSVdataLogger_ReubenPython3Class __init__: Error, must input 'VariableNamesForHeaderList'")
-        #    return
+        else:
+            self.UDP_RxOrTxRole = "rx"
 
-        print("CSVdataLogger_ReubenPython3Class __init__: VariableNamesForHeaderList: " + str(self.VariableNamesForHeaderList))
+        print("UDPdataExchanger_ReubenPython3Class __init__: UDP_RxOrTxRole: " + str(self.UDP_RxOrTxRole))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        if "IPV4_address" in setup_dict:
+            self.IPV4_address = str(setup_dict["IPV4_address"])
+
+        else:
+            self.IPV4_address = "127.0.0.1"
+
+        print("UDPdataExchanger_ReubenPython3Class __init__: IPV4_address: " + str(self.IPV4_address))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        if "IPV4_Port" in setup_dict:
+            self.IPV4_Port = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("IPV4_Port", setup_dict["IPV4_Port"], 1, 65535)) #port 0 doesn't work
+
+        else:
+            self.IPV4_Port = 1
+
+        print("UDPdataExchanger_ReubenPython3Class __init__: IPV4_Port: " + str(self.IPV4_Port))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        if "UDP_BufferSizeInBytes" in setup_dict:
+            self.UDP_BufferSizeInBytes = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_BufferSizeInBytes", setup_dict["UDP_BufferSizeInBytes"], 1, 1500)) #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
+
+        else:
+            self.UDP_BufferSizeInBytes = 64
+
+        print("UDPdataExchanger_ReubenPython3Class __init__: UDP_BufferSizeInBytes: " + str(self.UDP_BufferSizeInBytes))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        if "UDP_TimeoutInSeconds" in setup_dict:
+            self.UDP_TimeoutInSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_TimeoutInSeconds", setup_dict["UDP_TimeoutInSeconds"], 0.0, 1000000.0)
+
+        else:
+            self.UDP_TimeoutInSeconds = 1.0
+
+        print("UDPdataExchanger_ReubenPython3Class __init__: UDP_TimeoutInSeconds: " + str(self.UDP_TimeoutInSeconds))
         #########################################################
         #########################################################
 
@@ -395,19 +494,12 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             self.MainThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MainThread_TimeToSleepEachLoop", setup_dict["MainThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
-            self.MainThread_TimeToSleepEachLoop = 0.005
+            self.MainThread_TimeToSleepEachLoop = 0.002
 
-        print("CSVdataLogger_ReubenPython3Class __init__: MainThread_TimeToSleepEachLoop: " + str(self.MainThread_TimeToSleepEachLoop))
+        print("UDPdataExchanger_ReubenPython3Class __init__: MainThread_TimeToSleepEachLoop: " + str(self.MainThread_TimeToSleepEachLoop))
         #########################################################
         #########################################################
 
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def __del__(self):
-        pass
     ##########################################################################################################
     ##########################################################################################################
 
@@ -449,162 +541,65 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag = 0):
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
 
-        ##########################################################################################################
-        ##########################################################################################################
         try:
-
-            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
-            ##########################################################################################################
-
         except:
-
-            ##########################################################################################################
             exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
-            traceback.print_exc()
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
+            input("Press any key to continue")
+            sys.exit()
 
-            ##########################
-            if ExitProgramIfFailureFlag == 1:
-                sys.exit()
-            else:
-                return -1
-            ##########################
-
-            ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
         try:
-
-            ##########################################################################################################
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
                 return InputNumber_ConvertedToFloat
-
             else:
+                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                          InputNameString +
+                          "' must be 0 or 1 (value was " +
+                          str(InputNumber_ConvertedToFloat) +
+                          "). Press any key (and enter) to exit.")
 
-                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                              str(InputNameString) +
-                              "' must be 0 or 1 (value was " +
-                              str(InputNumber_ConvertedToFloat) +
-                              "). Press any key (and enter) to exit.")
-
-                ##########################
-                if ExitProgramIfFailureFlag == 1:
-                    sys.exit()
-
-                else:
-                    return -1
-                ##########################
-
-            ##########################################################################################################
-
+                sys.exit()
         except:
-
-            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-
-            ##########################
-            if ExitProgramIfFailureFlag == 1:
-                sys.exit()
-            else:
-                return -1
-            ##########################
-
-            ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
-
-    ##########################################################################################################
+            input("Press any key to continue")
+            sys.exit()
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag = 0):
-
-        ##########################################################################################################
-        ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
         try:
-            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
-            ##########################################################################################################
-
         except:
-            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            traceback.print_exc()
+            input("Press any key to continue")
+            sys.exit()
 
-            ##########################
-            if ExitProgramIfFailureFlag == 1:
-                sys.exit()
-            else:
-                return -11111.0
-            ##########################
-
-            ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
         try:
-
-            ##########################################################################################################
-            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
-
-            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
-                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                      str(InputNameString) +
-                      "' must be in the range [" +
-                      str(RangeMinValue) +
-                      ", " +
-                      str(RangeMaxValue) +
-                      "] (value was " +
-                      str(InputNumber_ConvertedToFloat) + ")")
-
-                ##########################
-                if ExitProgramIfFailureFlag == 1:
-                    sys.exit()
-                else:
-                    return -11111.0
-                ##########################
-
+            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
+                return InputNumber_ConvertedToFloat
             else:
-                return InputNumber_ConvertedToFloat_Limited
-            ##########################################################################################################
+                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                          InputNameString +
+                          "' must be in the range [" +
+                          str(RangeMinValue) +
+                          ", " +
+                          str(RangeMaxValue) +
+                          "] (value was " +
+                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
 
+                sys.exit()
         except:
-            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-
-            ##########################
-            if ExitProgramIfFailureFlag == 1:
-                sys.exit()
-            else:
-                return -11111.0
-            ##########################
-
-            ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
-
-    ##########################################################################################################
+            input("Press any key to continue")
+            sys.exit()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -635,165 +630,6 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def getTimeStampString(self):
-
-        ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%m_%d_%Y---%H_%M_%S')
-
-        return st
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def IsSaving(self):
-
-        return self.CSVfile_SaveFlag
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def IsAcceptingNewData(self):
-
-        return self.AcceptNewDataFlag
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def UpdateFrequencyCalculation_MainThread(self):
-
-        try:
-            self.DataStreamingDeltaT_CalculatedFromMainThread = self.CurrentTime_CalculatedFromMainThread - self.LastTime_CalculatedFromMainThread
-
-            if self.DataStreamingDeltaT_CalculatedFromMainThread != 0.0:
-                self.DataStreamingFrequency_CalculatedFromMainThread = 1.0/self.DataStreamingDeltaT_CalculatedFromMainThread
-
-            self.LastTime_CalculatedFromMainThread = self.CurrentTime_CalculatedFromMainThread
-        except:
-            exceptions = sys.exc_info()[0]
-            print("UpdateFrequencyCalculation_MainThread ERROR with Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def CreateNewDirectoryIfItDoesntExist(self, directory):
-        try:
-            #print("CreateNewDirectoryIfItDoesntExist, directory: " + directory)
-            if os.path.isdir(directory) == 0: #No directory with this name exists
-                os.makedirs(directory)
-        except:
-            exceptions = sys.exc_info()[0]
-            print("CreateNewDirectoryIfItDoesntExist, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def CreateCSVfileAndStartWritingData(self, CSVfile_DirectoryPath_Input = "", FileNamePrefix_Input = ""):
-
-        try:
-
-            if CSVfile_DirectoryPath_Input != "":
-                self.CSVfile_DirectoryPath = CSVfile_DirectoryPath_Input
-                self.CreateNewDirectoryIfItDoesntExist(self.CSVfile_DirectoryPath)
-
-            if FileNamePrefix_Input != "":
-                self.FileNamePrefix = FileNamePrefix_Input
-
-            self.CreateNewDirectoryIfItDoesntExist(self.CSVfile_DirectoryPath)
-
-            self.CSVfile_FilepathFull = self.CSVfile_DirectoryPath + "//" + self.FileNamePrefix + self.getTimeStampString() + ".csv"
-
-            self.CSVfile_FileObject = open(self.CSVfile_FilepathFull, "a") #Will append to file if it exists, create new file with this as first entry if file doesn't exist.
-            self.CSVfile_FileObject.write(self.VariablesHeaderStringCommaDelimited + "\n")
-
-            self.AcceptNewDataFlag = 1
-            self.CSVfile_SaveFlag = 1
-
-            print("CreateCSVfileAndStartWritingData: Opened file " + self.CSVfile_FilepathFull + " and started writing data!")
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("CreateCSVfileAndStartWritingData, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def StopWritingDataAndCloseCSVfileImmediately(self):
-
-        try:
-            if self.CSVfile_SaveFlag == 1:
-
-                self.AcceptNewDataFlag = 0
-                self.CSVfile_SaveFlag = 0
-
-                self.CSVfile_FileObject.close()
-
-                print("CloseCSVfileAndStopWritingData: Closed file " + self.CSVfile_FilepathFull + " and stopped writing data!")
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("CloseCSVfileAndStopWritingData, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def __WriteLineToCSVfile_InternalFunctionCall(self, ListOfDataToWrite):
-
-        try:
-
-            if self.CSVfile_SaveFlag == 1:
-
-                LineToWrite = ""
-
-                ###################################################
-                ###################################################
-                for index, element in enumerate(ListOfDataToWrite):
-
-                    ###################################################
-                    if isinstance(element, list) == 1:
-                        LineToWrite = LineToWrite + self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, 0, 5).replace("[","").replace("]","")
-                    else:
-                        LineToWrite = LineToWrite + self.ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, 0, 5)
-                    ###################################################
-
-                    ###################################################
-                    if index < len(ListOfDataToWrite) -1:
-                        LineToWrite = LineToWrite + ", "
-                    else:
-                        LineToWrite = LineToWrite + "\n"
-                    ###################################################
-
-                ###################################################
-                ###################################################
-
-                ###################################################
-                ###################################################
-                self.CSVfile_FileObject.write(LineToWrite)
-                ###################################################
-                ###################################################
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("__WriteLineToCSVfile_InternalFunctionCall, Exceptions: %s" % exceptions)
-            traceback.print_exc()
-
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
     def GetMostRecentDataDict(self):
 
         if self.EXIT_PROGRAM_FLAG == 0:
@@ -807,20 +643,291 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def AddDataToCSVfile_ExternalFunctionCall(self, ListOfDataToWrite):
+    def UpdateFrequencyCalculation_MainThread_Filtered(self):
 
-        if self.AcceptNewDataFlag == 1:
+        try:
+            self.DataStreamingDeltaT_CalculatedFromMainThread = self.CurrentTime_CalculatedFromMainThread - self.LastTime_CalculatedFromMainThread
 
-            if isinstance(ListOfDataToWrite, list) == 1:
+            if self.DataStreamingDeltaT_CalculatedFromMainThread != 0.0:
+                DataStreamingFrequency_CalculatedFromMainThread_TEMP = 1.0/self.DataStreamingDeltaT_CalculatedFromMainThread
 
-                if len(ListOfDataToWrite) == len(self.VariableNamesForHeaderList):
-                    self.DataQueue.put(ListOfDataToWrite)
+                ResultsDict = self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.AddDataDictFromExternalProgram(dict([("DataStreamingFrequency_CalculatedFromMainThread", DataStreamingFrequency_CalculatedFromMainThread_TEMP)]))
+                self.DataStreamingFrequency_CalculatedFromMainThread = ResultsDict["DataStreamingFrequency_CalculatedFromMainThread"]["Filtered_MostRecentValuesList"][0]
 
-                else:
-                    print("AddDataToCSVfile: ERROR,list is incorrect length.")
+            self.LastTime_CalculatedFromMainThread = self.CurrentTime_CalculatedFromMainThread
+        except:
+            exceptions = sys.exc_info()[0]
+            print("UpdateFrequencyCalculation_MainThread_Filtered, Exceptions: %s" % exceptions)
+            traceback.print_exc()
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ############################################################################################################
+    ##########################################################################################################
+    def ConvertDictToJSONstring(self, DictToConvert):
+
+        JSONstring = ""
+
+        try:
+            if type(DictToConvert) == dict:
+                JSONstring = json.dumps(DictToConvert, allow_nan=True)
 
             else:
-                print("AddDataToCSVfile: ERROR, input must be a list.")
+                print("ConvertDictToJSONstring: Error, input must be a dictionary.")
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("ConvertDictToJSONstring, exceptions: %s" % exceptions)
+
+        return JSONstring
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def ConvertJSONstringToDict(self, JSONstringToConvert):
+
+        DictToConvert = dict()
+
+        try:
+            if type(JSONstringToConvert) == str:
+                DictToConvert = json.loads(JSONstringToConvert)
+            else:
+                print("ConvertJSONstringToDict ERROR: Input must be a string.")
+        except:
+            exceptions = sys.exc_info()[0]
+            print("ConvertJSONstringToDict, exceptions: %s" % exceptions)
+
+        return DictToConvert
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def OpenUDPsocket(self):
+
+        try:
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            if self.UDP_RxOrTxRole == "rx":
+
+                self.UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  #AF_INET for internet, SOCK_DGRAM for UDP
+                self.UDP_SocketObject.bind((self.IPV4_address, self.IPV4_Port)) #bind() needed only on the client/Rx side, not on the server/Tx side.
+            
+                self.UDP_SocketObject.settimeout(self.UDP_TimeoutInSeconds) #Without a timeout set, the while 1: loop will continue forever when the keyboard-press triggers a program exit.
+            
+                self.UDP_SocketObject.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.UDP_BufferSizeInBytes)
+
+                print("OpenUDPsocket for Rx: UDP_SocketObject.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF): " + 
+                      str(self.UDP_SocketObject.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)))
+
+                self.UDP_PortIsOpenFlag = 1
+
+                print("OpenUDPsocket success for role " + self.UDP_RxOrTxRole)
+
+                return 1
+            ##########################################################################################################
+
+            ##########################################################################################################
+            elif self.UDP_RxOrTxRole == "tx":
+                
+                self.UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #AF_INET for internet, SOCK_DGRAM for UDP
+    
+                self.UDP_SocketObject.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.UDP_BufferSizeInBytes)
+    
+                print("OpenUDPsocket for Tx: UDP_SocketObject.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF): " +
+                      str(self.UDP_SocketObject.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)))
+    
+                self.UDP_PortIsOpenFlag = 1
+
+                print("OpenUDPsocket success for role " + self.UDP_RxOrTxRole)
+    
+                return 1
+            ##########################################################################################################
+
+            ##########################################################################################################
+            else:
+                return 0
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+
+        except:
+
+            ##########################################################################################################
+            ##########################################################################################################
+            self.UDP_PortIsOpenFlag = 0
+            exceptions = sys.exc_info()[0]
+
+            ########################
+            for i in range(0, 10):
+                print("@@@@@@@@@@ OpenUDPsocket for " + self.UDP_RxOrTxRole + ": VERIFY NETWORK SETTINGS, exceptions: %s" % exceptions)
+            ########################
+
+            traceback.print_exc()
+            return 0
+            ##########################################################################################################
+            ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def CloseUDPsocket(self):
+
+        try:
+            self.UDP_SocketObject.close()
+
+            return 1
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("CloseUDPsocket, Exceptions: %s" % exceptions)
+
+            return 0
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def RxUDPmessage(self, StringToTx, PrintDebuggingDataFlag = 0):
+
+        ##########################################################################################################
+        try:
+
+            if self.IPV4_Port >= 1 and self.IPV4_Port <= 65535: #Can't be 0
+
+                if self.UDP_PortIsOpenFlag == 1:
+
+                    Rx_DataStr, Rx_IPV4addressOfSocketSendingThisData = self.UDP_SocketObject.recvfrom(self.UDP_BufferSizeInBytes)
+                    Rx_DataStr = Rx_DataStr.decode('utf-8') #Python 3 requires .decode('utf-8') to be performed on data to get a normal string.
+
+                    ####### If there is a timeout (no received data), then we won't proceed beyond this line!
+
+                    self.UDP_RxPacketsReceivedCounter = self.UDP_RxPacketsReceivedCounter + 1
+                    self.UDP_RxLastTimePacketWasReceived = self.getPreciseSecondsTimeStampString() - self.StartingTime_CalculatedFromMainThread
+
+                    if PrintDebuggingDataFlag == 1:
+                        print("RxUDPmessage: Received UDP data (from IPV4 = " + str(Rx_IPV4addressOfSocketSendingThisData) +"): "  + str(Rx_DataStr) + ", len = " + str(len(Rx_DataStr)))
+
+                    self.MostRecentDataDict["MostRecentMessage_Rx_Str"] = Rx_DataStr
+
+                    self.MostRecentDataDict["MostRecentMessage_Rx_Str_Length"] = len(Rx_DataStr)
+
+                    Rx_DataDict = self.ConvertJSONstringToDict(Rx_DataStr)
+                    self.MostRecentDataDict["MostRecentMessage_Rx_Dict"] = Rx_DataDict
+
+                    self.MostRecentDataDict["MostRecentMessage_Rx_LocalTimeOfReceivingComputer"] = self.UDP_RxLastTimePacketWasReceived
+
+                    self.MostRecentDataDict["UDP_RxPacketsReceivedCounter"] = self.UDP_RxPacketsReceivedCounter
+
+                    return 1
+
+                else:
+                    if self.PrintAllReceivedSerialMessageForDebuggingFlag == 1:
+                        print("RxUDPmessage Error: self.UDP_PortIsOpenFlag = 0.")
+                    return 0
+
+            else:
+                print("RxUDPmessage Error: IPV4_Port must be in range [1, 65535].")
+                return 0
+        ##########################################################################################################
+
+        ##########################################################################################################
+        except:
+            exceptions = sys.exc_info()[0]
+
+            if str(exceptions).lower().find("timeout") == -1: #Only display non-UDP-timeout exceptions
+                print("RxUDPmessage: exceptions: %s" % exceptions)
+                traceback.print_exc()
+            else:
+                self.UDP_TimeoutCounter = self.UDP_TimeoutCounter + 1
+                self.MostRecentDataDict["UDP_TimeoutCounter"] = self.UDP_TimeoutCounter
+                return 0
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def TxUDPmessage(self, StringToTx):
+
+        try:
+
+            if isinstance(StringToTx, str) == 1:
+
+                if len(StringToTx) > 0:
+
+                    if self.IPV4_Port >= 1 and self.IPV4_Port <= 65535: #Can't be 0
+
+                        if self.UDP_PortIsOpenFlag == 1:
+
+                            self.UDP_SocketObject.sendto(StringToTx.encode('utf-8'), (self.IPV4_address, self.IPV4_Port)) #Python 3 requires .encode('utf-8') to be performed on string.
+                            self.UDP_TxPacketsTransmittedCounter = self.UDP_TxPacketsTransmittedCounter + 1
+
+                            self.MostRecentDataDict["MostRecentMessage_Tx"] = StringToTx
+                            self.MostRecentDataDict["MostRecentMessage_Tx_Length"] = len(StringToTx)
+                            self.MostRecentDataDict["UDP_TxPacketsTransmittedCounter"] = self.UDP_TxPacketsTransmittedCounter
+
+                            return 1
+
+                        else:
+                            print("TxUDPmessage Error: self.UDP_PortIsOpenFlag = 0.")
+                            return 0
+
+                    else:
+                        print("TxUDPmessage Error: IPV4_Port must be in range [1, 65535].")
+                        return 0
+
+                else:
+                    print("TxUDPmessage: Error, StringToTx was empty.")
+                    return 0
+
+            else:
+                print("TxUDPmessage Error: StringToTx must be type str.")
+                return 0
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("TxUDPmessage: exceptions: %s" % exceptions)
+            traceback.print_exc()
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def SendDictFromExternalProgram(self, InputDict):
+
+        try:
+
+            if self.UDP_RxOrTxRole == "tx":
+
+                if isinstance(InputDict, dict) == 0:
+                    print("TxDataFromExternalProgram: Error, InputDict must be type dict.")
+                    return 0
+
+                JSONstringToTx = self.ConvertDictToJSONstring(InputDict)
+
+                self.JSONstringToTx_Queue.put(JSONstringToTx)
+
+                return 1
+
+            else:
+                print("SendDictFromExternalProgram: Error, UDP_RxOrTxRole must be Tx.")
+                return 0
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("TxDataFromExternalProgram: exceptions: %s" % exceptions)
+            traceback.print_exc()
+            return 0
 
     ##########################################################################################################
     ##########################################################################################################
@@ -829,93 +936,176 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
     ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
+    ##########################################################################################################
     def MainThread(self):
 
-        self.MyPrint_WithoutLogFile("Started MainThread for CSVdataLogger_ReubenPython3Class object.")
-
-        self.MainThread_still_running_flag = 1
-
-        if self.SaveOnStartupFlag == 1:
-            self.CreateCSVfileAndStartWritingData()
+        self.MyPrint_WithoutLogFile("Started MainThread for UDPdataExchanger_ReubenPython3Class object.")
+        self.MainThread_StillRunningFlag = 1
 
         self.StartingTime_CalculatedFromMainThread = self.getPreciseSecondsTimeStampString()
-
+        ##########################################################################################################
         ##########################################################################################################
         ##########################################################################################################
         ##########################################################################################################
         while self.EXIT_PROGRAM_FLAG == 0:
 
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+            self.CurrentTime_CalculatedFromMainThread = self.getPreciseSecondsTimeStampString() - self.StartingTime_CalculatedFromMainThread
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            if self.WatchdogTimerExpirationDurationSeconds > 0.0:
+
+                ##########################################################################################################
+                if self.CurrentTime_CalculatedFromMainThread - self.UDP_RxLastTimePacketWasReceived >= self.WatchdogTimerExpirationDurationSeconds:
+                    self.WatchdogTimerExpirationState = 1
+                else:
+                    self.WatchdogTimerExpirationState = 0
+                ##########################################################################################################
+
+            else:
+                self.WatchdogTimerExpirationState = 0
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            self.MostRecentDataDict["WatchdogTimerExpirationState"] = self.WatchdogTimerExpirationState
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+            
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+            if self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag == 1:
+
+                if self.DataStream_State == 0:
+                    self.DataStream_State = 1
+                else:
+                    self.DataStream_State = 0
+
+                self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag = 0
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
             try:
 
                 ##########################################################################################################
                 ##########################################################################################################
-                self.CurrentTime_CalculatedFromMainThread = self.getPreciseSecondsTimeStampString() - self.StartingTime_CalculatedFromMainThread
-                ##########################################################################################################
-                ##########################################################################################################
-
-                ##########################################################################################################
-                ##########################################################################################################
-                if self.CSVfile_SaveFlag_NeedsToBeChangedFlag == 1:
-
-                    if self.DataQueue.qsize() == 0:
-                        if self.CSVfile_SaveFlag == 1:  # Currently saving, need to close the file.
-                            self.StopWritingDataAndCloseCSVfileImmediately()
-
-                        else:  # Currently NOT saving, need to open the file.
-                            self.CreateCSVfileAndStartWritingData()
-
-                        self.CSVfile_SaveFlag_NeedsToBeChangedFlag = 0
-
-                ##########################################################################################################
-                ##########################################################################################################
-
-                ##########################################################################################################
-                ##########################################################################################################
-                if self.CSVfile_SaveFlag == 1:
+                if self.UDP_RxOrTxRole == "rx":
 
                     ##########################################################################################################
-                    if self.DataQueue.qsize() > 0:
+                    try:
 
-                        ###################################################
-                        ListOfDataToWrite = self.DataQueue.get()
+                        if self.DataStream_State == 1:
+                            self.RxUDPmessage(self.PrintAllReceivedSerialMessageForDebuggingFlag)
 
-                        self.__WriteLineToCSVfile_InternalFunctionCall(ListOfDataToWrite)
-                        ###################################################
+                    except:
+                        exceptions = sys.exc_info()[0]
+                        print("MainThread, message receiving section, Exceptions: %s" % exceptions)
+                        traceback.print_exc()
+                    ##########################################################################################################
 
+                ##########################################################################################################
                 ##########################################################################################################
 
                 ##########################################################################################################
-                self.UpdateFrequencyCalculation_MainThread()
+                ##########################################################################################################
+                elif self.UDP_RxOrTxRole == "tx":
 
-                self.MostRecentDataDict["Time"] = self.CurrentTime_CalculatedFromMainThread
-                self.MostRecentDataDict["DataStreamingFrequency_CalculatedFromMainThread"] = self.DataStreamingFrequency_CalculatedFromMainThread
-                self.MostRecentDataDict["AcceptNewDataFlag"] = self.AcceptNewDataFlag
-                self.MostRecentDataDict["SaveFlag"] = self.CSVfile_SaveFlag
-                self.MostRecentDataDict["DataQueue_qsize"] = self.DataQueue.qsize()
-                self.MostRecentDataDict["VariableNamesForHeaderList"] = self.VariableNamesForHeaderList
-                self.MostRecentDataDict["FilepathFull"] = self.CSVfile_FilepathFull
+                    ##########################################################################################################
+                    try:
 
-                if self.MainThread_TimeToSleepEachLoop > 0.0:
-                    time.sleep(self.MainThread_TimeToSleepEachLoop)
+                        if self.DataStream_State == 1:
+                            if self.JSONstringToTx_Queue.qsize() > 0:
+                                JSONstringToTx_LocalCopy = self.JSONstringToTx_Queue.get()
+
+                                self.TxUDPmessage(JSONstringToTx_LocalCopy)
+
+                    except:
+                        exceptions = sys.exc_info()[0]
+                        print("MainThread, message receiving section, Exceptions: %s" % exceptions)
+                        traceback.print_exc()
+                    ##########################################################################################################
+
+                ##########################################################################################################
                 ##########################################################################################################
 
+                ##########################################################################################################
+                ##########################################################################################################
+                else:
+                    pass
                 ##########################################################################################################
                 ##########################################################################################################
 
             except:
                 exceptions = sys.exc_info()[0]
-                print("CloseCSVfileAndStopWritingData, Exceptions: %s" % exceptions)
+                print("UDPdataExchanger_ReubenPython3Class, MainThread, Inner Exceptions: %s" % exceptions)
                 traceback.print_exc()
 
+            ########################################################################################################## These should be outside of the queue and heartbeat
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ########################################################################################################## USE THE TIME.SLEEP() TO SET THE LOOP FREQUENCY
+            ##########################################################################################################
+            ##########################################################################################################
+            self.UpdateFrequencyCalculation_MainThread_Filtered()
+
+            self.MostRecentDataDict["Time"] = self.CurrentTime_CalculatedFromMainThread
+            self.MostRecentDataDict["DataStreamingFrequency_CalculatedFromMainThread"] = self.DataStreamingFrequency_CalculatedFromMainThread
+
+            if self.MainThread_TimeToSleepEachLoop > 0.0:
+                if self.MainThread_TimeToSleepEachLoop > 0.001:
+                    time.sleep(self.MainThread_TimeToSleepEachLoop - 0.001) #The "- 0.001" corrects for slight deviation from intended frequency due to other functions being called.
+                else:
+                    time.sleep(self.MainThread_TimeToSleepEachLoop)
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+
+        ##########################################################################################################
         ##########################################################################################################
         ##########################################################################################################
         ##########################################################################################################
 
-        self.StopWritingDataAndCloseCSVfileImmediately()
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
 
-        self.MyPrint_WithoutLogFile("Finished MainThread for CSVdataLogger_ReubenPython3Class object.")
+            self.CloseUDPsocket()
+            self.MainThread_StillRunningFlag = 0
+            print("Finished MainThread for UDPdataExchanger_ReubenPython3Class object.")
 
-        self.MainThread_still_running_flag = 0
+        except:
+            exceptions = sys.exc_info()[0]
+            print("UDPdataExchanger_ReubenPython3Class, MainThread, closing routine exceptions: %s" % exceptions)
+            traceback.print_exc()
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
@@ -925,7 +1115,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
     ##########################################################################################################
     def ExitProgram_Callback(self):
 
-        print("Exiting all threads for CSVdataLogger_ReubenPython3Class object")
+        print("Exiting all threads for UDPdataExchanger_ReubenPython3Class object")
 
         self.EXIT_PROGRAM_FLAG = 1
     ##########################################################################################################
@@ -935,10 +1125,6 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
     ##########################################################################################################
     def StartGUI(self, GuiParent):
 
-        #self.GUI_Thread_ThreadingObject = threading.Thread(target=self.GUI_Thread, args=(GuiParent,))
-        #self.GUI_Thread_ThreadingObject.setDaemon(True) #Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        #self.GUI_Thread_ThreadingObject.start()
-
         self.GUI_Thread(GuiParent)
     ##########################################################################################################
     ##########################################################################################################
@@ -947,7 +1133,7 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
     ##########################################################################################################
     def GUI_Thread(self, parent):
 
-        print("Starting the GUI_Thread for CSVdataLogger_ReubenPython3Class object.")
+        print("Starting the GUI_Thread for UDPdataExchanger_ReubenPython3Class object.")
 
         #################################################
         #################################################
@@ -982,12 +1168,15 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         self.TKinter_DefaultGrayColor = '#%02x%02x%02x' % (240, 240, 240)  # RGB
         #################################################
         #################################################
+        #################################################
 
         #################################################
         #################################################
-        self.DeviceInfo_Label = Label(self.myFrame, text="Device Info", width=125)
-
-        self.DeviceInfo_Label["text"] = self.NameToDisplay_UserSet
+        self.DeviceInfo_Label = Label(self.myFrame, text="Device Info", width=50, font=("Helvetica", 12))
+        self.DeviceInfo_Label["text"] = self.NameToDisplay_UserSet + \
+                                        "\nRole = " + str(self.UDP_RxOrTxRole) + \
+                                        "\nIPV4 = " + str(self.IPV4_address) + \
+                                        "\nPort = " + str(self.IPV4_Port)
 
         self.DeviceInfo_Label.grid(row=0, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
         #################################################
@@ -995,21 +1184,28 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #################################################
         #################################################
-        self.Data_Label = Label(self.myFrame, text="Data_Label", width=125)
+        self.Data_Label = Label(self.myFrame, text="Data_Label", width=120)
         self.Data_Label.grid(row=1, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
         #################################################
         #################################################
 
         #################################################
         #################################################
-        self.CSVfile_SaveFlag_Button = Button(self.myFrame, text='Save CSV', state="normal", width=20, font=("Helvetica", 12), command=lambda i=1: self.CSVfile_SaveFlag_ButtonResponse())
-        self.CSVfile_SaveFlag_Button.grid(row=2, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
+        self.ButtonsFrame = Frame(self.myFrame)
+        self.ButtonsFrame.grid(row = 2, column = 0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
         #################################################
         #################################################
 
         #################################################
         #################################################
-        self.PrintToGui_Label = Label(self.myFrame, text="PrintToGui_Label", width=125)
+        self.ToggleDataStreamOnOrOff_Button = Button(self.ButtonsFrame, text="Reset Peak", state="normal", width=15, command=lambda: self.ToggleDataStreamOnOrOff_Button_Response())
+        self.ToggleDataStreamOnOrOff_Button.grid(row=0, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
+        #################################################
+        #################################################
+
+        #################################################
+        #################################################
+        self.PrintToGui_Label = Label(self.myFrame, text="PrintToGui_Label", width=75)
         if self.EnableInternal_MyPrint_Flag == 1:
             self.PrintToGui_Label.grid(row=3, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=10, rowspan=10)
         #################################################
@@ -1026,12 +1222,11 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def CSVfile_SaveFlag_ButtonResponse(self):
+    def ToggleDataStreamOnOrOff_Button_Response(self):
 
-        self.AcceptNewDataFlag = 0
-        self.CSVfile_SaveFlag_NeedsToBeChangedFlag = 1
+        self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag = 1
 
-        #self.MyPrint_WithoutLogFile("CSVfileForTrajectoryData_SaveFlag_ButtonResponse event fired!")
+        #self.MyPrint_WithoutLogFile("ToggleDataStreamOnOrOff_Button_Response: Event fired!")
 
     ##########################################################################################################
     ##########################################################################################################
@@ -1044,61 +1239,53 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #######################################################
         #######################################################
         #######################################################
-        #######################################################
-        if self.USE_GUI_FLAG == 1:
+        if self.USE_GUI_FLAG == 1 and self.EXIT_PROGRAM_FLAG == 0:
 
             #######################################################
             #######################################################
             #######################################################
-            #######################################################
-            if self.EXIT_PROGRAM_FLAG == 0:
+            if self.GUI_ready_to_be_updated_flag == 1:
 
                 #######################################################
                 #######################################################
-                #######################################################
-                if self.GUI_ready_to_be_updated_flag == 1:
+                try:
 
                     #######################################################
-                    #######################################################
-                    try:
-
-                        #######################################################
-                        self.Data_Label["text"] = self.ConvertDictToProperlyFormattedStringForPrinting(self.MostRecentDataDict,
+                    self.Data_Label["text"] = self.ConvertDictToProperlyFormattedStringForPrinting(self.MostRecentDataDict,
                                                                                                     NumberOfDecimalsPlaceToUse = 5,
                                                                                                     NumberOfEntriesPerLine = 1,
                                                                                                     NumberOfTabsBetweenItems = 3)
-                        #######################################################
 
-                        #######################################################
-                        if self.CSVfile_SaveFlag == 1:
-                            self.CSVfile_SaveFlag_Button["bg"] = self.TKinter_LightGreenColor
-                            self.CSVfile_SaveFlag_Button["text"] = "Saving CSV"
-                        else:
-                            self.CSVfile_SaveFlag_Button["bg"] = self.TKinter_LightRedColor
-                            self.CSVfile_SaveFlag_Button["text"] = "NOT saving CSV"
-                        #######################################################
-
-                        #######################################################
-                        self.PrintToGui_Label.config(text=self.PrintToGui_Label_TextInput_Str)
-                        #######################################################
-
-                    except:
-                        exceptions = sys.exc_info()[0]
-                        print("CSVdataLogger_ReubenPython3Class GUI_update_clock ERROR: Exceptions: %s" % exceptions)
-                        traceback.print_exc()
-                    #######################################################
+                    if self.WatchdogTimerExpirationState == 0:
+                        self.Data_Label["bg"] = self.TKinter_LightGreenColor
+                    else:
+                        self.Data_Label["bg"] = self.TKinter_LightRedColor
                     #######################################################
 
-                #######################################################
+                    #######################################################
+                    self.ToggleDataStreamOnOrOff_Button["text"] = "Data Stream\n" + str(self.DataStream_State)
+
+                    if self.DataStream_State == 1:
+                        self.ToggleDataStreamOnOrOff_Button["bg"] = self.TKinter_LightGreenColor
+                    else:
+                        self.ToggleDataStreamOnOrOff_Button["bg"] = self.TKinter_LightRedColor
+                    #######################################################
+
+                    #######################################################
+                    self.PrintToGui_Label.config(text=self.PrintToGui_Label_TextInput_Str)
+                    #######################################################
+
+                except:
+                    exceptions = sys.exc_info()[0]
+                    print("UDPdataExchanger_ReubenPython3Class GUI_update_clock ERROR: Exceptions: %s" % exceptions)
+                    traceback.print_exc()
                 #######################################################
                 #######################################################
 
             #######################################################
             #######################################################
             #######################################################
-            #######################################################
 
-        #######################################################
         #######################################################
         #######################################################
         #######################################################
@@ -1334,5 +1521,3 @@ class CSVdataLogger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         return ProperlyFormattedStringForPrinting
     ##########################################################################################################
     ##########################################################################################################
-
-

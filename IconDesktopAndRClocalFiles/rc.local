@@ -1,0 +1,39 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+######  Log everything from execution of rc.local to a file that you can read on a removed SD card:
+exec > /boot/rc-local-execution-log.txt 2>&1;set -x
+###### 
+
+###### ">>" appends to end of existing file, ">" overwrites instead
+echo $(date) " | Starting rc.local" >> /home/pinis/Desktop/rc-local-echo-file.txt
+###### 
+
+###### Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+###### 
+
+######
+sh /home/pinis/Desktop/ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles/HelperBashAndPythonScripts/Launch_ArucoTagDetectionFromCameraFeed_RCLOCAL.sh &
+######
+
+###### ">>" appends to end of existing file, ">" overwrites instead
+echo $(date) " | Finishing rc.local" >> /home/pinis/Desktop/rc-local-echo-file.txt
+###### 
+
+###### 
+exit 0
+###### 

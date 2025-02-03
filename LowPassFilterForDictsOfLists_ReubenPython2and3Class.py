@@ -6,7 +6,7 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision C, 07/18/2023
+Software Revision E, 09/07/2024
 
 Verified working on: Python 3.8 for Windows 10 64-bit, Ubuntu 20.04, and Raspberry Pi Buster (no Mac testing yet).
 '''
@@ -69,6 +69,22 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
         #########################################################
         #########################################################
         self.VariablesDict = dict()
+
+        '''
+        #DO NOT INITIALIZE self.VariablesDict HERE BECAUSE WE DON'T KNOW LengthOfList (THE VARIABLES BEING WRITTEN), UNLESS WE WANT TO PASS THAT INTO THE SETUP DICT.
+        LengthOfList = len(self.DictOfVariableFilterSettings)
+        StartingValueOfSignalList = [0.0] * 5
+        for VariableNameString in self.DictOfVariableFilterSettings:
+            self.VariablesDict[VariableNameString] = dict([("__SignalInRawHistoryList", list([StartingValueOfSignalList] * LengthOfList)),
+                                                           ("__SignalOutFilteredHistoryList", list([StartingValueOfSignalList] * LengthOfList)),
+                                                           ("Raw_MostRecentValuesList", [0.0] * LengthOfList),
+                                                           ("Filtered_MostRecentValuesList", [0.0] * LengthOfList),
+                                                           ("UseMedianFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"]),
+                                                           ("UseExponentialSmoothingFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"]),
+                                                           ("ExponentialSmoothingFilterLambda", self.DictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"])])
+
+        print("LowPassFilterForDictsOfLists_ReubenPython2and3Class __init__: VariablesDict: " + str(self.VariablesDict))
+        '''
         #########################################################
         #########################################################
 
@@ -114,8 +130,8 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
         except:
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            #input("Press any key to continue")
+            #sys.exit()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -147,22 +163,90 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
         except:
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            #input("Press any key to continue")
+            #sys.exit()
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def AddDictOfVariableFilterSettingsFromExternalProgram(self, NewDictOfVariableFilterSettings):
+    def LimitNumber(self, min_val, max_val, test_val):
 
-        self.DictOfVariableFilterSettings = dict()
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram(self, NewDictOfVariableFilterSettings):
 
         for VariableNameString in NewDictOfVariableFilterSettings:
             if VariableNameString not in self.DictOfVariableFilterSettings:
                 self.DictOfVariableFilterSettings[VariableNameString] = deepcopy(NewDictOfVariableFilterSettings[VariableNameString])
+                #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: VariableNameString " + VariableNameString + " was NOT found in self.DictOfVariableFilterSettings.")
+            else:
+                self.UpdateVariableFilterSettingsFromExternalProgram(VariableNameString,
+                                                                     NewDictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"],
+                                                                     NewDictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"],
+                                                                     NewDictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"])
+                #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: VariableNameString " + VariableNameString + " was found in self.DictOfVariableFilterSettings.")
 
-        print("AddDictOfVariableFilterSettingsFromExternalProgram: " + str(self.DictOfVariableFilterSettings))
+        #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: NewDictOfVariableFilterSettings = " + str(NewDictOfVariableFilterSettings))
+        #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: self.DictOfVariableFilterSettings =" + str(self.DictOfVariableFilterSettings))
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def UpdateVariableFilterSettingsFromExternalProgram(self, VariableNameString, UseMedianFilterFlag, UseExponentialSmoothingFilterFlag, ExponentialSmoothingFilterLambda):
+
+        try:
+            if VariableNameString in self.DictOfVariableFilterSettings:
+
+                if UseMedianFilterFlag not in [0, 1]:
+                    print("UpdateVariableFilterSettingsFromExternalProgram: Error, UseMedianFilterFlag must be in [0, 1].")
+                    return -1
+
+                if UseExponentialSmoothingFilterFlag not in [0, 1]:
+                    print("UpdateVariableFilterSettingsFromExternalProgram: Error, UseExponentialSmoothingFilterFlag must be in [0, 1].")
+                    return -1
+
+                ExponentialSmoothingFilterLambda_Limited = self.LimitNumber(0.0, 1.0, ExponentialSmoothingFilterLambda)
+
+                self.DictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"] = UseMedianFilterFlag
+                self.DictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"] = UseExponentialSmoothingFilterFlag
+                self.DictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"] = ExponentialSmoothingFilterLambda_Limited
+
+                self.VariablesDict[VariableNameString]["UseMedianFilterFlag"] = UseMedianFilterFlag
+                self.VariablesDict[VariableNameString]["UseExponentialSmoothingFilterFlag"] = UseExponentialSmoothingFilterFlag
+                self.VariablesDict[VariableNameString]["ExponentialSmoothingFilterLambda"] = ExponentialSmoothingFilterLambda_Limited
+
+                '''
+                print("UpdateVariableFilterSettingsFromExternalProgram: Update successful for " + str(VariableNameString) + \
+                      " with UseMedianFilterFlag = " + str(UseMedianFilterFlag) + \
+                      ", UseExponentialSmoothingFilterFlag = " + str(UseExponentialSmoothingFilterFlag) + \
+                      ", and ExponentialSmoothingFilterLambda = " + str(ExponentialSmoothingFilterLambda))
+                '''
+
+            else:
+                print("UpdateVariableFilterSettingsFromExternalProgram: Error, " + str(VariableNameString) + " not a recognized variable.")
+                return -1
+
+            return 1
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("UpdateVariableFilterSettingsFromExternalProgram for VariableNameString " + VariableNameString + ", exceptions: %s" % exceptions)
+            traceback.print_exc()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -218,70 +302,76 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
     ##########################################################################################################
     def AddDataDictFromExternalProgram(self, DataDictOfNewPointsForMultipleVariables):
 
-        #print("AddDataDictFromExternalProgram: self.DictOfVariableFilterSettings = " + str(self.DictOfVariableFilterSettings))
-
-        ##########################################################################################################
-        ##########################################################################################################
-        for VariableNameString in DataDictOfNewPointsForMultipleVariables:
+        try:
+            #print("AddDataDictFromExternalProgram: self.DataDictOfNewPointsForMultipleVariables = " + str(DataDictOfNewPointsForMultipleVariables))
 
             ##########################################################################################################
-            if VariableNameString in self.DictOfVariableFilterSettings:
+            ##########################################################################################################
+            for VariableNameString in DataDictOfNewPointsForMultipleVariables:
 
-                ###############################################
-                ###############################################
-                UpdatedValuesList = DataDictOfNewPointsForMultipleVariables[VariableNameString]
-                if isinstance(UpdatedValuesList, list) == 0:
-                    UpdatedValuesList = [UpdatedValuesList]
-                ###############################################
-                ###############################################
-
-                ###############################################
-                ###############################################
-                if VariableNameString not in self.VariablesDict:
+                ##########################################################################################################
+                if VariableNameString in self.DictOfVariableFilterSettings:
 
                     ###############################################
-                    LengthOfList = len(UpdatedValuesList)
-                    StartingValueOfSignalList = [0.0]*5
-                    self.VariablesDict[VariableNameString] = dict([("__SignalInRawHistoryList", list([StartingValueOfSignalList]*LengthOfList)),
-                                                                   ("__SignalOutFilteredHistoryList", list([StartingValueOfSignalList]*LengthOfList)),
-                                                                   ("Raw_MostRecentValuesList", [0.0]*LengthOfList),
-                                                                   ("Filtered_MostRecentValuesList", [0.0]*LengthOfList),
-                                                                   ("UseMedianFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"]),
-                                                                   ("UseExponentialSmoothingFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"]),
-                                                                   ("ExponentialSmoothingFilterLambda", self.DictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"])])
+                    ###############################################
+                    UpdatedValuesList = DataDictOfNewPointsForMultipleVariables[VariableNameString]
+                    if isinstance(UpdatedValuesList, list) == 0:
+                        UpdatedValuesList = [UpdatedValuesList]
+                    ###############################################
                     ###############################################
 
-                ###############################################
-                ###############################################
+                    ###############################################
+                    ###############################################
+                    if VariableNameString not in self.VariablesDict: #unicorn
 
-                ###############################################
-                ###############################################
+                        ###############################################
+                        LengthOfList = len(UpdatedValuesList)
+                        StartingValueOfSignalList = [0.0]*5
+                        self.VariablesDict[VariableNameString] = dict([("__SignalInRawHistoryList", list([StartingValueOfSignalList]*LengthOfList)),
+                                                                       ("__SignalOutFilteredHistoryList", list([StartingValueOfSignalList]*LengthOfList)),
+                                                                       ("Raw_MostRecentValuesList", [0.0]*LengthOfList),
+                                                                       ("Filtered_MostRecentValuesList", [0.0]*LengthOfList),
+                                                                       ("UseMedianFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"]),
+                                                                       ("UseExponentialSmoothingFilterFlag", self.DictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"]),
+                                                                       ("ExponentialSmoothingFilterLambda", self.DictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"])])
+                        ###############################################
+
+                    ###############################################
+                    ###############################################
+
+                    ###############################################
+                    ###############################################
+                    else:
+                        ###############################################
+                        for Index, Value in enumerate(UpdatedValuesList):
+                            self.UpdateOneVariableWithNewValue(VariableNameString, Index, Value)
+                        ###############################################
+
+                    ###############################################
+                    ###############################################
+
+                ##########################################################################################################
+
+                ##########################################################################################################
                 else:
+                    print("AddDataDictFromExternalProgram, error: " + VariableNameString + " not in self.DictOfVariableFilterSettings")
+                    return dict()
+                ##########################################################################################################
 
-                    ###############################################
-                    for Index, Value in enumerate(UpdatedValuesList):
-                        self.UpdateOneVariableWithNewValue(VariableNameString, Index, Value)
-                    ###############################################
-
-                ###############################################
-                ###############################################
-
+            ##########################################################################################################
             ##########################################################################################################
 
             ##########################################################################################################
-            else:
-                print("AddDataDictFromExternalProgram, error: " + VariableNameString + " not in self.DictOfVariableFilterSettings")
-                return dict()
+            ##########################################################################################################
+            return deepcopy(self.VariablesDict)
+            ##########################################################################################################
             ##########################################################################################################
 
-        ##########################################################################################################
-        ##########################################################################################################
-
-        ##########################################################################################################
-        ##########################################################################################################
-        return deepcopy(self.VariablesDict)
-        ##########################################################################################################
-        ##########################################################################################################
+        except:
+            exceptions = sys.exc_info()[0]
+            print("AddDataDictFromExternalProgram, exceptions: %s" % exceptions)
+            traceback.print_exc()
+            return dict()
 
     ##########################################################################################################
     ##########################################################################################################
@@ -344,6 +434,8 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
             ###############################################
             ###############################################
 
+            #print("VariableNameStr Lambda: " + VariableNameStr + " = " + str(self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"]))
+
             ###############################################
             ###############################################
             ###############################################
@@ -360,6 +452,16 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
     def GetMostRecentDataDict(self):
 
         return deepcopy(self.VariablesDict.copy()) #deepcopy is required we're returning a dict of dicts.
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def ExitProgram_Callback(self):
+
+        print("Exiting all threads for LowPassFilterForDictsOfLists_ReubenPython2and3Class object")
+
+        #Currently not doing anything else here.
     ##########################################################################################################
     ##########################################################################################################
 

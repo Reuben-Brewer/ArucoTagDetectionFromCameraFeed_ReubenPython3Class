@@ -6,9 +6,9 @@ reuben.brewer@gmail.com,
 www.reubotics.com
 
 Apache 2 License
-Software Revision K, 05/10/2023
+Software Revision P, 02/02/2025
 
-Verified working on: Python 3.8 for Windows 8.1, 10 64-bit, Ubuntu 20.04, and Raspberry Pi Buster (no Mac testing yet).
+Verified working on: Python 3.12 for Windows 11 64-bit, Ubuntu 20.04, and Raspberry Pi Buster.
 THE SEPARATE-PROCESS-SPAWNING COMPONENT OF THIS CLASS IS NOT AVAILABLE IN PYTHON 2 DUE TO LIMITATION OF
 "multiprocessing.set_start_method('spawn', force=True)" ONLY BEING AVAILABLE IN PYTHON 3. PLOTTING WITHIN A SINGLE PROCESS STILL WORKS.
 '''
@@ -29,6 +29,7 @@ import traceback
 import math
 from decimal import Decimal
 import threading
+import platform
 import psutil
 import pexpect
 import subprocess
@@ -247,6 +248,15 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
         ##########################################
 
         ##########################################
+        if "AxisMinMaxEpsilon" in setup_dict:
+            self.AxisMinMaxEpsilon = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("AxisMinMaxEpsilon", setup_dict["AxisMinMaxEpsilon"], 0.000001, 1000.0)
+        else:
+            self.AxisMinMaxEpsilon = 0.000001
+
+        print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: AxisMinMaxEpsilon: " + str(self.AxisMinMaxEpsilon))
+        ##########################################
+
+        ##########################################
         if "CurvesToPlotNamesAndColorsDictOfLists" in setup_dict:
             self.CurvesToPlotNamesAndColorsDictOfLists = setup_dict["CurvesToPlotNamesAndColorsDictOfLists"]
         else:
@@ -254,6 +264,74 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
 
         print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: CurvesToPlotNamesAndColorsDictOfLists: " + str(self.CurvesToPlotNamesAndColorsDictOfLists))
         ##########################################
+
+        ##########################################
+        self.ProcessVariablesThatCanBeLiveUpdated(setup_dict)
+        ##########################################
+
+        ##########################################
+        self.PrintToGui_Label_TextInputHistory_List = [" "]*self.NumberOfPrintLines
+        self.PrintToGui_Label_TextInput_Str = ""
+        self.GUI_ready_to_be_updated_flag = 0
+        ##########################################
+
+        ##########################################
+        self.TKinter_LightGreenColor = '#%02x%02x%02x' % (150, 255, 150) #RGB
+        self.TKinter_LightRedColor = '#%02x%02x%02x' % (255, 150, 150) #RGB
+        self.TKinter_LightYellowColor = '#%02x%02x%02x' % (255, 255, 150)  # RGB
+        self.TKinter_DefaultGrayColor = '#%02x%02x%02x' % (240, 240, 240)  # RGB
+        ##########################################
+
+        self.GraphBoxOutline_X0 = 50 #Offset from the Canvas object so that there's room for the axis-labels
+        self.GraphBoxOutline_Y0 = 50 #Offset from the Canvas object so that there's room for the axis-labels
+
+        self.CurvesToPlotDictOfDicts = dict()
+
+        ########## IT APPEARS THAT IF THE VARIABLE IS CREATED BY THE PARENT BEFORE THE CHILD, THEN THE CHILD KNOWS ABOUT IT.
+        ########## HOWEVER, YOU CAN'T MODIFY IT, OUTSIDE OF THAT PROCESS.
+        ##########################################
+        if "NameList" in self.CurvesToPlotNamesAndColorsDictOfLists:
+            NameList = self.CurvesToPlotNamesAndColorsDictOfLists["NameList"]
+            if "ColorList" in self.CurvesToPlotNamesAndColorsDictOfLists:
+                ColorList = self.CurvesToPlotNamesAndColorsDictOfLists["ColorList"]
+
+                if len(NameList) == len(ColorList):
+                    for counter, element in enumerate(NameList):
+                        self.AddCurveToPlot(NameList[counter], ColorList[counter])
+                else:
+                    print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'CurveList' and 'NameList' must be the same length in self.CurvesToPlotNamesAndColorsDictOfLists.")
+                    return
+            else:
+                print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'CurveList' key must be in self.CurvesToPlotNamesAndColorsDictOfLists.")
+                return
+        else:
+            print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'NameList' key must be in self.CurvesToPlotNamesAndColorsDictOfLists.")
+            return
+        ##########################################
+
+        self.CurrentTime_CalculatedFromGUIthread = -11111.0
+        self.LastTime_CalculatedFromGUIthread = -11111.0
+        self.LoopFrequency_CalculatedFromGUIthread = -11111.0
+        self.LoopDeltaT_CalculatedFromGUIthread = -11111.0
+
+        self.CurrentTime_CalculatedFromStandAlonePlottingProcess = -11111.0
+        self.LastTime_CalculatedFromStandAlonePlottingProcess = -11111.0
+        self.LoopFrequency_CalculatedFromStandAlonePlottingProcess = -11111.0
+        self.LoopDeltaT_CalculatedFromStandAlonePlottingProcess = -11111.0
+
+        self.StandAlonePlottingProcess_ReadyForWritingFlag = 0
+
+        self.MostRecentDataDict = dict()
+        #########################################################
+        #########################################################
+        #########################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def ProcessVariablesThatCanBeLiveUpdated(self, setup_dict):
 
         ##########################################
         if "NumberOfDataPointToPlot" in setup_dict:
@@ -407,63 +485,6 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
         print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: YaxisLabelString: " + str(self.YaxisLabelString))
         ##########################################
 
-        ##########################################
-        self.PrintToGui_Label_TextInputHistory_List = [" "]*self.NumberOfPrintLines
-        self.PrintToGui_Label_TextInput_Str = ""
-        self.GUI_ready_to_be_updated_flag = 0
-        ##########################################
-
-        ##########################################
-        self.TKinter_LightGreenColor = '#%02x%02x%02x' % (150, 255, 150) #RGB
-        self.TKinter_LightRedColor = '#%02x%02x%02x' % (255, 150, 150) #RGB
-        self.TKinter_LightYellowColor = '#%02x%02x%02x' % (255, 255, 150)  # RGB
-        self.TKinter_DefaultGrayColor = '#%02x%02x%02x' % (240, 240, 240)  # RGB
-        ##########################################
-
-        self.GraphBoxOutline_X0 = 50 #Offset from the Canvas object so that there's room for the axis-labels UNICORN
-        self.GraphBoxOutline_Y0 = 50 #Offset from the Canvas object so that there's room for the axis-labels UNICORN
-
-        self.CurvesToPlotDictOfDicts = dict()
-
-        ########## IT APPEARS THAT IF THE VARIABLE IS CREATED BY THE PARENT BEFORE THE CHILD, THEN THE CHILD KNOWS ABOUT IT.
-        ########## HOWEVER, YOU CAN'T MODIFY IT, OUTSIDE OF THAT PROCESS.
-        ##########################################
-        if "NameList" in self.CurvesToPlotNamesAndColorsDictOfLists:
-            NameList = self.CurvesToPlotNamesAndColorsDictOfLists["NameList"]
-            if "ColorList" in self.CurvesToPlotNamesAndColorsDictOfLists:
-                ColorList = self.CurvesToPlotNamesAndColorsDictOfLists["ColorList"]
-
-                if len(NameList) == len(ColorList):
-                    for counter, element in enumerate(NameList):
-                        self.AddCurveToPlot(NameList[counter], ColorList[counter])
-                else:
-                    print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'CurveList' and 'NameList' must be the same length in self.CurvesToPlotNamesAndColorsDictOfLists.")
-                    return
-            else:
-                print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'CurveList' key must be in self.CurvesToPlotNamesAndColorsDictOfLists.")
-                return
-        else:
-            print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class __init__: Error, 'NameList' key must be in self.CurvesToPlotNamesAndColorsDictOfLists.")
-            return
-        ##########################################
-
-        self.CurrentTime_CalculatedFromGUIthread = -11111.0
-        self.LastTime_CalculatedFromGUIthread = -11111.0
-        self.LoopFrequency_CalculatedFromGUIthread = -11111.0
-        self.LoopDeltaT_CalculatedFromGUIthread = -11111.0
-
-        self.CurrentTime_CalculatedFromStandAlonePlottingProcess = -11111.0
-        self.LastTime_CalculatedFromStandAlonePlottingProcess = -11111.0
-        self.LoopFrequency_CalculatedFromStandAlonePlottingProcess = -11111.0
-        self.LoopDeltaT_CalculatedFromStandAlonePlottingProcess = -11111.0
-
-        self.StandAlonePlottingProcess_ReadyForWritingFlag = 0
-
-        self.MostRecentDataDict = dict()
-        #########################################################
-        #########################################################
-        #########################################################
-
     ##########################################################################################################
     ##########################################################################################################
 
@@ -529,37 +550,45 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
                         inputDict = MultiprocessingQueue_Rx_Local.get(FALSE)  #for queue, non-blocking with "FALSE" argument, could also use MultiprocessingQueue_Rx_Local.get_nowait() for non-blocking
 
                         ###############
-                        if "EndStandAloneProcessFlag" in inputDict:
-                            self.EXIT_PROGRAM_FLAG = 1
+                        if "YaxisAutoscaleFlag" in inputDict:
+                            self.ProcessVariablesThatCanBeLiveUpdated(inputDict)
 
                         else:
-                            CurveName = inputDict["CurveName"]
-                            x = inputDict["x"]
-                            y = inputDict["y"]
 
-                            #print(str([x,y]))
+                            if "EndStandAloneProcessFlag" in inputDict:
+                                self.EXIT_PROGRAM_FLAG = 1
 
-                            self.AddPointOrListOfPointsToPlot(CurveName, x, y)
+                            else:
+                                CurveName = inputDict["CurveName"]
+                                x = inputDict["x"]
+                                y = inputDict["y"]
+
+                                #print(str([x,y]))
+
+                                self.AddPointOrListOfPointsToPlot(CurveName, x, y)
                         ###############
 
                     except:
                         exceptions = sys.exc_info()[0]
-                        print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class StandAlonePlottingProcess, exceptions: %s" % exceptions)  # unicorn
-                        traceback.print_exc()
+                        print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class StandAlonePlottingProcess, exceptions: %s" % exceptions)
+                        #traceback.print_exc()
                 #############################################
 
                 self.MostRecentDataDict = dict([("CurvesToPlotDictOfDicts", self.CurvesToPlotDictOfDicts),
                                                 ("StandAlonePlottingProcess_ReadyForWritingFlag", self.StandAlonePlottingProcess_ReadyForWritingFlag)])
 
                 #deepcopy is required (beyond .copy() ) because self.MostRecentDataDict contains a dict.
-                MultiprocessingQueue_Tx_Local.put(deepcopy(self.MostRecentDataDict)) #unicorn
+                MultiprocessingQueue_Tx_Local.put(deepcopy(self.MostRecentDataDict))
 
-                time.sleep(0.005) #THIS IS THE MAGIC LINE THAT ALLOWS WORKING ON RASPBERRY-PI
+                if "raspberrypi" in platform.uname():  # os.uname() doesn't work in windows
+                    time.sleep(0.005) #THIS IS THE MAGIC LINE THAT ALLOWS WORKING ON RASPBERRY-PI
+                else:
+                    time.sleep(0.001)
 
             except:
                 exceptions = sys.exc_info()[0]
-                print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class, exceptions: %s" % exceptions)  # unicorn
-                traceback.print_exc()
+                print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class, exceptions: %s" % exceptions)
+                #traceback.print_exc()
             #############################################
 
         #############################################
@@ -583,17 +612,6 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
         #############################################
         #############################################
 
-        ############################################# EXPERIMENTAL Close GUI
-        #self.end_program_GUI_callback() #DON'T USE THIS IN A MULTIPROCESSING CONTEXT. INSTEAD, MAKE GUI_THREAD A DAEMON THAT CLOSES AUTOMATICALLY WHEN THE PARENT THREAD CLOSES.
-        #self.GUI_Thread_ThreadingObject.join()
-        #############################################
-
-        ############################################# EXPERIMENTAL Close job DON'T ISSUE THESE COMMANDS FROM THIS THREAD OR ELSE THERE WILL BE ERRORS
-        #self.job_for_another_core.close()
-        #self.job_for_another_core.join_thread()
-        #self.job_for_another_core.terminate()
-        #############################################
-
         print("Exited MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class.")
     ##########################################################################################################
     ##########################################################################################################
@@ -610,70 +628,198 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     ##########################################################################################################
     ##########################################################################################################
 
+    ###########################################################################################################
     ##########################################################################################################
-    ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
+    def LimitNumber_IntOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
 
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = int(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def LimitNumber_FloatOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = float(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag = 1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
 
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                              str(InputNameString) +
+                              "' must be 0 or 1 (value was " +
+                              str(InputNumber_ConvertedToFloat) +
+                              ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
+    ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag = 1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
 
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                InputTextToDisplay = "PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '"# + \
-                          #InputNameString + \
-                          #"' must be in the range [" + \
-                          #str(RangeMinValue) + \
-                          #", " + \
-                          #str(RangeMaxValue) + \
-                          #"] (value was " + \
-                          #str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit."
-                input(InputTextToDisplay)
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
 
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -743,10 +889,16 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     ##########################################################################################################
     def GetMostRecentDataDict(self):
 
-        if self.MultiprocessingQueue_Tx.empty() != 1:
-            return self.MultiprocessingQueue_Tx.get(FALSE)
-        else:
-            return dict()
+        try:
+            if self.MultiprocessingQueue_Tx.empty() != 1:
+                return self.MultiprocessingQueue_Tx.get(FALSE)
+            else:
+                return dict()
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class, GetMostRecentDataDict, Exceptions: %s" % exceptions)
+            #traceback.print_exc()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -819,6 +971,7 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     def ExternalAddPointOrListOfPointsToPlot(self, CurveName, x, y):
 
         if self.IsInputList(CurveName) == 1:
+
             #####
             if len(CurveName) != len(x) or len(CurveName) != len(y):
                 print("ExternalAddPointOrListOfPointsToPlot: ERROR, length of CurveName (" +
@@ -834,6 +987,21 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
 
         else:
             self.MultiprocessingQueue_Rx.put(dict([("CurveName", CurveName), ("x", x), ("y", y)]))
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ########################################################################################################## unicorn
+    ##########################################################################################################
+    def ExternalUpdateSetupDict(self, setup_dict):
+
+        if self.IsInputDict(setup_dict) == 1:
+
+            self.MultiprocessingQueue_Rx.put(setup_dict)
+
+
+        else:
+            self.MultiprocessingQueue_Rx.put(dict())
 
     ##########################################################################################################
     ##########################################################################################################
@@ -854,7 +1022,7 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
             if CurveName in self.CurvesToPlotDictOfDicts:
                 ############################################
                 for i in range(0, len(x)): #Cycle through points in list
-                    #print("i: " + str(i) + ", x: " + str(x[i]) + ", y: " + str(y[i])) #unicorn
+                    #print("i: " + str(i) + ", x: " + str(x[i]) + ", y: " + str(y[i]))
                     if len(self.CurvesToPlotDictOfDicts[CurveName]["PointToDrawList"]) < self.NumberOfDataPointToPlot:
                         self.CurvesToPlotDictOfDicts[CurveName]["PointToDrawList"].append([x[i],y[i]])
                     else:
@@ -979,28 +1147,36 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     ##########################################################################################################
     def ConvertMathPointToCanvasCoordinates(self, PointListXY):
 
-        x = PointListXY[0]
-        y = PointListXY[1]
+        try:
 
-        W = self.GraphCanvasWidth*0.8 # #If we use the whole width, then we'll clip labels, tick marks, etc. UNICORN
-        H = self.GraphCanvasHeight*0.9 # #If we use the whole width, then we'll clip labels, tick marks, etc. UNICORN
+            x = PointListXY[0]
+            y = PointListXY[1]
 
-        m_Xaxis = ((W - self.GraphBoxOutline_X0)/(self.X_max - self.X_min))
-        b_Xaxis = W - m_Xaxis*self.X_max
+            W = self.GraphCanvasWidth*0.8 # #If we use the whole width, then we'll clip labels, tick marks, etc.
+            H = self.GraphCanvasHeight*0.9 # #If we use the whole width, then we'll clip labels, tick marks, etc.
 
-        X_out = m_Xaxis*x + b_Xaxis
+            m_Xaxis = ((W - self.GraphBoxOutline_X0)/(self.X_max - self.X_min))
+            b_Xaxis = W - m_Xaxis*self.X_max
 
-
-        m_Yaxis = ((H - self.GraphBoxOutline_Y0) / (self.Y_max - self.Y_min))
-        b_Yaxis = H - m_Yaxis * self.Y_max
-
-        Y_out = m_Yaxis * y + b_Yaxis
+            X_out = m_Xaxis*x + b_Xaxis
 
 
-        X_out = X_out
-        Y_out = self.GraphCanvasHeight - Y_out #Flip y-axis
+            m_Yaxis = ((H - self.GraphBoxOutline_Y0) / (self.Y_max - self.Y_min))
+            b_Yaxis = H - m_Yaxis * self.Y_max
 
-        return [X_out, Y_out]
+            Y_out = m_Yaxis * y + b_Yaxis
+
+
+            X_out = X_out
+            Y_out = self.GraphCanvasHeight - Y_out #Flip y-axis
+
+            return [X_out, Y_out]
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("ConvertMathPointToCanvasCoordinates, for input " + str(PointListXY) + " of type " + str(type(PointListXY)) + ", exceptions: %s" % exceptions)
+            return PointListXY
+            #traceback.print_exc()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -1104,34 +1280,47 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
         Y_min_NEW = temp_Y_min
         Y_max_NEW = temp_Y_max
 
-        temp_AllPointsXlist = list()
-        temp_AllPointsYlist = list()
-        for CurveName in temp_CurvesToPlotDictOfDicts:
-            TempListOfPointToDrawForThisCurve = temp_CurvesToPlotDictOfDicts[CurveName]["PointToDrawList"]
+        try:
+            temp_AllPointsXlist = list()
+            temp_AllPointsYlist = list()
+            for CurveName in temp_CurvesToPlotDictOfDicts:
+                TempListOfPointToDrawForThisCurve = temp_CurvesToPlotDictOfDicts[CurveName]["PointToDrawList"]
 
-            for temp_Point in TempListOfPointToDrawForThisCurve:
-                temp_AllPointsXlist.append(temp_Point[0])
-                temp_AllPointsYlist.append(temp_Point[1])
+                for temp_Point in TempListOfPointToDrawForThisCurve:
+                    temp_AllPointsXlist.append(temp_Point[0])
+                    temp_AllPointsYlist.append(temp_Point[1])
 
 
-        if len(temp_AllPointsXlist) > 0:
-            #print temp_AllPointsXlist
+            if len(temp_AllPointsXlist) > 0:
+                #print temp_AllPointsXlist
 
-            X_min_temp = min(temp_AllPointsXlist)
-            X_max_temp = max(temp_AllPointsXlist)
-            Y_min_temp = min(temp_AllPointsYlist)
-            Y_max_temp = max(temp_AllPointsYlist)
+                X_min_temp = min(temp_AllPointsXlist)
+                X_max_temp = max(temp_AllPointsXlist)
+                Y_min_temp = min(temp_AllPointsYlist)
+                Y_max_temp = max(temp_AllPointsYlist)
 
-            if X_min_temp != X_max_temp and self.XaxisAutoscaleFlag == 1:
-                X_min_NEW = X_min_temp
-                X_max_NEW = X_max_temp
+                if X_min_temp != X_max_temp and self.XaxisAutoscaleFlag == 1:
+                    X_min_NEW = X_min_temp
+                    X_max_NEW = X_max_temp
 
-            if Y_min_temp != Y_max_temp and self.YaxisAutoscaleFlag == 1:
-                Y_min_NEW = Y_min_temp
-                Y_max_NEW = Y_max_temp
+                if Y_min_temp != Y_max_temp and self.YaxisAutoscaleFlag == 1:
+                    Y_min_NEW = Y_min_temp
+                    Y_max_NEW = Y_max_temp
 
-        # print("X_min_NEW: " + str(X_min_NEW) + ", X_max_NEW: " + str(X_max_NEW) + ", Len: " + str(len(TempListOfPointToDraw)))
-        # print("Y_min_NEW: " + str(Y_min_NEW) + ", Y_max_NEW: " + str(Y_max_NEW) + ", Len: " + str(len(TempListOfPointToDraw)))
+            # print("X_min_NEW: " + str(X_min_NEW) + ", X_max_NEW: " + str(X_max_NEW) + ", Len: " + str(len(TempListOfPointToDraw)))
+            # print("Y_min_NEW: " + str(Y_min_NEW) + ", Y_max_NEW: " + str(Y_max_NEW) + ", Len: " + str(len(TempListOfPointToDraw)))
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("UpdateNewXandYlimits, exceptions: %s" % exceptions)
+            #traceback.print_exc()
+
+
+        if abs(X_max_NEW - X_min_NEW) < self.AxisMinMaxEpsilon:
+            X_max_NEW = X_min_NEW + self.AxisMinMaxEpsilon
+
+        if abs(Y_max_NEW - Y_min_NEW) < self.AxisMinMaxEpsilon:
+            Y_max_NEW = Y_min_NEW + self.AxisMinMaxEpsilon
 
         return [X_min_NEW, X_max_NEW, Y_min_NEW, Y_max_NEW]
     ##########################################################################################################
@@ -1141,14 +1330,20 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     ##########################################################################################################
     def DrawOnePoint_MathCoord(self, PointToDraw_MathCoord, Color="Black"):
 
-        PointToDraw_CanvasCoord = self.ConvertMathPointToCanvasCoordinates(PointToDraw_MathCoord)
+        try:
+            PointToDraw_CanvasCoord = self.ConvertMathPointToCanvasCoordinates(PointToDraw_MathCoord)
 
-        self.CanvasForDrawingGraph.create_oval(PointToDraw_CanvasCoord[0] - self.MarkerSize,
-                                               PointToDraw_CanvasCoord[1] - self.MarkerSize,
-                                               PointToDraw_CanvasCoord[0] + self.MarkerSize,
-                                               PointToDraw_CanvasCoord[1] + self.MarkerSize,
-                                               fill=Color,
-                                               outline=Color)
+            self.CanvasForDrawingGraph.create_oval(PointToDraw_CanvasCoord[0] - self.MarkerSize,
+                                                   PointToDraw_CanvasCoord[1] - self.MarkerSize,
+                                                   PointToDraw_CanvasCoord[0] + self.MarkerSize,
+                                                   PointToDraw_CanvasCoord[1] + self.MarkerSize,
+                                                   fill=Color,
+                                                   outline=Color)
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("DrawOnePoint_MathCoord, exceptions: %s" % exceptions)
+            #traceback.print_exc()
     ##########################################################################################################
     ##########################################################################################################
 
@@ -1171,7 +1366,7 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     ##########################################################################################################
 
     ##########################################################################################################
-    ########################################################################################################## UNICORN def GUI
+    ##########################################################################################################  def GUI
     def __GUI_update_clock(self): #THIS FUNCTION NEEDS TO BE CALLED INTERNALLY BY THE CLASS, NOT EXTERNALLY LIKE WE NORMALLY DO BECAUSE WE'RE FIRING THESE ROOT.AFTER CALLBACKS FASTER THAN THE PARENT ROOT GUI
 
         if self.EXIT_PROGRAM_FLAG == 0:
@@ -1195,6 +1390,8 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
                 #################
 
                 [self.X_min, self.X_max, self.Y_min, self.Y_max] = self.UpdateNewXandYlimits(temp_CurvesToPlotDictOfDicts, temp_X_min, temp_X_max, temp_Y_min, temp_Y_max) #temp_X_min, temp_X_max, temp_Y_min, temp_Y_max
+
+                #print("self.Y_max: " + str(self.Y_max))
 
                 temp_X_min = float(self.X_min)
                 temp_X_max = float(self.X_max)
@@ -1276,6 +1473,15 @@ class MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(Frame): #Subc
     def IsInputList(self, InputToCheck):
 
         result = isinstance(InputToCheck, list)
+        return result
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def IsInputDict(self, InputToCheck):
+
+        result = isinstance(InputToCheck, dict)
         return result
     ##########################################################################################################
     ##########################################################################################################

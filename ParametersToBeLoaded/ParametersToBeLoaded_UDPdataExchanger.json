@@ -1,0 +1,9 @@
+{
+    "UDPdataExchanger_Directions": "",
+    "UDPdataExchanger_NameToDisplay_UserSet":"UDPdataExchanger",
+    "UDPdataExchanger_UDP_RxOrTxRole":"tx",
+    "UDPdataExchanger_IPV4_address":"192.168.1.77",
+    "UDPdataExchanger_IPV4_Port":1,
+    "UDPdataExchanger_UDP_BufferSizeInBytes":128,
+    "UDPdataExchanger_MainThread_TimeToSleepEachLoop":0.002
+}

@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision F, 09/24/2023
+Software Revision G, 02/02/2025
 
-Verified working on: Python 3.8 for Windows 10 64-bit, Ubuntu 20.04, and Raspberry Pi Buster (no Mac testing yet).
+Verified working on: Python 3.12 for Windows 11 64-bit, Ubuntu 20.04, and Raspberry Pi Bullseye, Bookworm (Backend = "CAP_ANY", Camera = ELP USB).
 '''
 
 __author__ = 'reuben.brewer'
@@ -41,7 +41,7 @@ from copy import * #for deepcopy(dict)
 
 #########################################################
 import cv2 #pip install opencv-contrib-python==4.5.5.64
-import numpy
+import numpy #version 1.26
 print("OpenCV version: " + str(cv2.__version__))
 #########################################################
 
@@ -106,6 +106,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         self.SaveImageFlag_NeedsToBeChangedFlag = 0
         self.SaveSingleSnapshotOrContinuousStreamOfImages_state = 0
         self.SavedImageFrameCounter = 0
+        self.ZeroCoordinatesFlag_NeedsToBeChangedFlag = 0
 
         #https://docs.opencv.org/3.4/d9/d6a/group__aruco.html
 
@@ -528,7 +529,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         #########################################################
         if self.USE_GUI_FLAG == 1:
             self.StartGUI(self.root)
-            time.sleep(0.25)
+            time.sleep(0.25) #Is this necessary?
         else:
             self.CameraFrame = None
         #########################################################
@@ -741,6 +742,33 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         ts_milliseconds = int(decimal.Decimal(1000.0 * time.time()))
 
         return ts_milliseconds
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def SetZeroOffset_ExternalProgram(self, ArucoMarker_ID_Str, ZeroOffset_ToBeSet=0, PrintDebugFlag=0):
+
+        try:
+            ArucoMarker_ID_Str = str(ArucoMarker_ID_Str)
+
+            if ArucoMarker_ID_Str in self.DetectedArucoTag_InfoDict:
+
+                if ZeroOffset_ToBeSet == 0: #Use the argument as the offset.
+                    self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList"] = ZeroOffset_ToBeSet
+                    self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag"] = 0
+
+                else: #Use the current position as the offset.
+                    self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag"] = 1
+
+            if PrintDebugFlag == 1:
+                print("SetZeroOffset_ExternalProgram event fired for ArucoMarker_ID_Str = " + str(ArucoMarker_ID_Str))
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("SetZeroOffset_ExternalProgram, exceptions: %s" % exceptions)
+            traceback.print_exc()
 
     ##########################################################################################################
     ##########################################################################################################
@@ -1027,6 +1055,34 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                     ##########################################################################################################
                     ##########################################################################################################
 
+                    ########################################################################################################## Set all individual flags based on global flag
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    if self.ZeroCoordinatesFlag_NeedsToBeChangedFlag == 1:
+                        for ArucoMarker_ID_Str in self.DetectedArucoTag_InfoDict:
+                            self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag"] = 1
+
+                        self.ZeroCoordinatesFlag_NeedsToBeChangedFlag = 0
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    for ArucoMarker_ID_Str in self.DetectedArucoTag_InfoDict:
+                        if self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag"] == 1:
+                            self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList"] = list(self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList"])
+                            self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag"] = 0
+
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+                    ##########################################################################################################
+
                     ##########################################################################################################
                     ##########################################################################################################
                     ##########################################################################################################
@@ -1129,6 +1185,13 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                     '''
 
                                     #########################################################
+                                    #Not sure why we have to include the [0] after [Index]
+                                    ArucoMarker_ID_Str = str(self.DetectedArucoTags_IDsList[Index][0])
+                                    #print("ArucoMarker_ID_Str: " + str(ArucoMarker_ID_Str))
+                                    #########################################################
+
+                                    ######################################################### unicorn
+                                    #########################################################
                                     self.DetectedArucoTags_CenterOfMarker_ImageCoordinates[Index] = numpy.mean(self.DetectedArucoTags_CornersList_ImageCoordinates[Index][0], 0)
 
                                     ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray, ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray, MarkerPoints = cv2.aruco.estimatePoseSingleMarkers(self.DetectedArucoTags_CornersList_ImageCoordinates[Index],
@@ -1140,6 +1203,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                     ArucoTag_TranslationVectorOfMarkerCenter_PythonList = ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray[0][0].tolist()
                                     ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList = ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray[0][0].tolist()
                                     #########################################################
+                                    #########################################################
 
                                     #########################################################
                                     RotationObjectScipy = Rotation.from_rotvec(ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList)
@@ -1148,10 +1212,6 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                     #########################################################
 
                                     #########################################################
-                                    #Not sure why we have to include the [0] after [Index]
-                                    ArucoMarker_ID_Str = str(self.DetectedArucoTags_IDsList[Index][0])
-                                    #print("ArucoMarker_ID_Str: " + str(ArucoMarker_ID_Str))
-
                                     if ArucoMarker_ID_Str not in self.DetectedArucoTag_InfoDict: #Marker ID hasn't been detected previously
 
                                         LowPassFilter_DictOfVariableFilterSettings = dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])),
@@ -1161,6 +1221,9 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                         SetupDict = dict([("DictOfVariableFilterSettings", LowPassFilter_DictOfVariableFilterSettings)])
 
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str] = dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
+                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
+                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList", [0.0]*3),
+                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag", 0),
                                                                         ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
                                                                         ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList),
                                                                         ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList),
@@ -1177,12 +1240,20 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                                                                                                                                                                         ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
                                                                                                                                                                                         ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList)]))
 
+                                        self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList"] = list(Results["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"]["Filtered_MostRecentValuesList"])
+
+                                        #########################################################
+                                        for Number in [0, 1, 2]:
+                                            self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"][Number] = self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList"][Number] - self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList"][Number]
+                                        #########################################################
+
                                         #print(self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"])
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_DetectionTimeInMilliseconds"] = int(1000.0*self.CAMERA_MostRecentDict_Time)
-                                        self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"] = Results["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"]["Filtered_MostRecentValuesList"]
+
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList"] = Results["ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList"]["Filtered_MostRecentValuesList"]
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList"] = Results["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList"]["Filtered_MostRecentValuesList"]
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList"] = numpy.deg2rad(numpy.array(Results["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList"]["Filtered_MostRecentValuesList"])).tolist()
+
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_DetectedArucoTags_CornersList_ImageCoordinates"] = self.DetectedArucoTags_CornersList_ImageCoordinates[Index]
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_DetectedArucoTags_CenterOfMarker_ImageCoordinates"] = self.DetectedArucoTags_CenterOfMarker_ImageCoordinates[Index]
                                         #print("yahtze, index " + str(str(self.DetectedArucoTags_IDsList[Index])[0]))
@@ -1642,8 +1713,19 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         ################################################
         ################################################
+        self.ZeroCoordinatesButton = Button(self.ArucoTagDetectionControlsFrame,
+                                                    text="Zero Coord",
+                                                    state="normal",
+                                                    width=30,
+                                                    command=lambda i=1: self.ZeroCoordinatesButtonResponse())
+        self.ZeroCoordinatesButton.grid(row=4, column=0, padx=1, pady=1, columnspan=1, rowspan=1)
+        ################################################
+        ################################################
+
+        ################################################
+        ################################################
         self.Data_Label = Label(self.ArucoTagDetectionControlsFrame, text="Data_Label", width=150)
-        self.Data_Label.grid(row=4, column=0, padx=1, pady=1, columnspan=1, rowspan=1)
+        self.Data_Label.grid(row=5, column=0, padx=1, pady=1, columnspan=1, rowspan=1)
         ################################################
         ################################################
 
@@ -1651,7 +1733,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         ################################################
         self.PrintToGui_Label = Label(self.ArucoTagDetectionControlsFrame, text="PrintToGui_Label", width=150)
         if self.EnableInternal_MyPrint_Flag == 1:
-            self.PrintToGui_Label.grid(row=5, column=0, padx=1, pady=1, columnspan=10, rowspan=10)
+            self.PrintToGui_Label.grid(row=6, column=0, padx=1, pady=1, columnspan=10, rowspan=10)
         ################################################
         ################################################
 
@@ -1713,6 +1795,16 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
             self.SaveSingleSnapshotOrContinuousStreamOfImages_state = 0
 
         #self.MyPrint_WithoutLogFile("SaveSingleSnapshotOrContinuousStreamOfImages_CheckbuttonResponse, self.SaveSingleSnapshotOrContinuousStreamOfImages_state: " + str(self.SaveSingleSnapshotOrContinuousStreamOfImages_state))
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def ZeroCoordinatesButtonResponse(self):
+
+        self.ZeroCoordinatesFlag_NeedsToBeChangedFlag = 1
+
+        #print("ZeroCoordinatesButtonResponse event fired!")
     ##########################################################################################################
     ##########################################################################################################
 

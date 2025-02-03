@@ -1,0 +1,22 @@
+#sudo apt-get install xterm
+#You can validate .desktop files by using the command: desktop-file-validate ~/Desktop/yourfilename.desktop
+# -----------------------------------------------------------------------------
+
+[Desktop Entry]
+
+Name=Launch_ArucoTagDetectionFromCameraFeed_Normal
+Exec=sudo sh /home/pinis/Desktop/ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles/HelperBashAndPythonScripts/Launch_ArucoTagDetectionFromCameraFeed_Normal.sh
+Terminal=true
+Type=Application
+Icon=/home/pinis/Desktop/ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles/IconDesktopAndRClocalFiles/GreenLight_ArucoTagDetectionFromCameraFeed_Normal.png
+
+#Other optional parameters below:
+#Encoding=UTF-8
+#X-AppInstall-Package=xterm
+#X-AppInstall-Popcon=15648
+#X-AppInstall-Section=main
+#Categories=System;TerminalEmulator;Utility;
+#X-Desktop-File-Install-Version=0.21
+#X-Ubuntu-Gettext-Domain=app-install-data
+#GenericName=
+#Comment=

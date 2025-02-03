@@ -1,0 +1,22 @@
+#sudo apt-get install xterm
+#You can validate .desktop files by using the command: desktop-file-validate ~/Desktop/yourfilename.desktop
+# -----------------------------------------------------------------------------
+
+[Desktop Entry]
+
+Name=ListPythonProcessesRunning
+Exec=sudo /home/pinis/VirtualEnvironment_SelfBalancingRobot1/bin/python3 /home/pinis/Desktop/ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles/GetPIDsByProcessEnglishNameAndOptionallyKill_ReubenPython2and3.py "python3"
+Terminal=true
+Type=Application
+Icon=/home/pinis/Desktop/ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles/IconDesktopAndRClocalFiles/ListPythonProcessesRunning.png
+
+#Other optional parameters below:
+#Encoding=UTF-8
+#X-AppInstall-Package=xterm
+#X-AppInstall-Popcon=15648
+#X-AppInstall-Section=main
+#Categories=System;TerminalEmulator;Utility;
+#X-Desktop-File-Install-Version=0.21
+#X-Ubuntu-Gettext-Domain=app-install-data
+#GenericName=
+#Comment=

@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision H, 09/22/2023
+Software Revision I, 02/02/2025
 
-Verified working on: Python 3.8 for Windows10 64-bit (no testing on Raspberry Pi or Mac testing yet).
+Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Buster (Backend = "CAP_ANY", Camera = ELP USB).
 '''
 
 __author__ = 'reuben.brewer'
@@ -870,29 +870,13 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
                 ###############################################
                 ###############################################
 
-                print("CAP_PROP_AUTOFOCUS read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_AUTOFOCUS)))
-
-                print("CAP_PROP_AUTO_EXPOSURE read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_AUTO_EXPOSURE)))
-
-                print("CAP_PROP_EXPOSURE read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_EXPOSURE)))
-
-                print("CAP_PROP_GAIN read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_GAIN)))
-
-                print("CAP_PROP_BRIGHTNESS read from camera is currently: " +\
-                    str(self.CVcapture.get(cv2.CAP_PROP_BRIGHTNESS)))
-
-                print("CAP_PROP_CONTRAST read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_CONTRAST)))
-
-                print("CAP_PROP_SATURATION read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_SATURATION)))
-
-                print("CAP_PROP_HUE read from camera is currently: " +\
-                              str(self.CVcapture.get(cv2.CAP_PROP_HUE)))
+                ###############################################
+                ###############################################
+                ###############################################
+                self.GetCameraSettings(self.CVcapture, PrintForDebuggingFlag = 1)
+                ###############################################
+                ###############################################
+                ###############################################
 
                 ##########################################################################################################
                 self.CreateNewDirectory(os.getcwd() + "\\" + self.Camera_SavedImages_LocalDirectoryNameNoSlashes)
@@ -961,7 +945,36 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
     ##########################################################################################################
     ##########################################################################################################
 
-    ###########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def GetCameraSettings(self, CVcapture, PrintForDebuggingFlag = 0):
+
+        CameraSettingDict = dict()
+
+        try:
+            CameraSettingDict["Autofocus"] = CVcapture.get(cv2.CAP_PROP_AUTOFOCUS)
+            CameraSettingDict["Autoexposure"] = CVcapture.get(cv2.CAP_PROP_AUTO_EXPOSURE)
+            CameraSettingDict["Exposure"] = CVcapture.get(cv2.CAP_PROP_EXPOSURE)
+            CameraSettingDict["Gain"] = CVcapture.get(cv2.CAP_PROP_GAIN)
+            CameraSettingDict["Brightness"] = CVcapture.get(cv2.CAP_PROP_BRIGHTNESS)
+            CameraSettingDict["Contrast"] = CVcapture.get(cv2.CAP_PROP_CONTRAST)
+            CameraSettingDict["Saturation"] = CVcapture.get(cv2.CAP_PROP_SATURATION)
+            CameraSettingDict["Hue"] = CVcapture.get(cv2.CAP_PROP_HUE)
+
+            if PrintForDebuggingFlag == 1:
+                print("GetCameraSettings, CameraSettingDict: " + str(CameraSettingDict))
+
+            return CameraSettingDict
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("GetCameraSettings: Exceptions, %s" % exceptions)
+            return CameraSettingDict
+            #traceback.print_exc()
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
     ##########################################################################################################
     def OpenCVgetFOURCCfromVideoCapture(self, VideoCaptureObject):
 
