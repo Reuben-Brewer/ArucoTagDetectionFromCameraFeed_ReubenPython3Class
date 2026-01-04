@@ -12,32 +12,29 @@ www.reubotics.com
 
 Apache 2 License
 
-Software Revision G, 02/02/2025
+Software Revision H, 01/02/2026
 
-Verified working on: 
-Python 3.12, Windows 11 64-bit and Raspberry Pi Bullseye, Bookworm (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 
 ########################  
 
 ########################### Python module installation instructions, all OS's
 
-ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies: ['CameraStreamerClass_ReubenPython2and3Class', 'cv2', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class', 'LowPassFilterForDictsOfLists_ReubenPython2and3Class', 'numpy', 'scipy.spatial.transform']
+ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies: ['CameraStreamerClass_ReubenPython2and3Class', 'cv2', 'LowPassFilter_ReubenPython2and3Class', 'LowPassFilterForDictsOfLists_ReubenPython2and3Class', 'numpy', 'ReubenGithubCodeModulePaths', 'scipy.spatial.transform']
 
-ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_TestProgram: ['CSVdataLogger_ReubenPython3Class', 'MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class', 'MyPrint_ReubenPython2and3Class']
+ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_TestProgram: ['CSVdataLogger_ReubenPython3Class', 'keyboard', 'MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class', 'numpy', 'ReubenGithubCodeModulePaths', 'UDPdataExchanger_ReubenPython3Class']
 
-ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_NestedLayers: ['cv2', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class', 'numpy', 'pexpect', 'psutil']
+ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_NestedLayers: ['cv2', 'EntryListWithBlinking_ReubenPython2and3Class', 'GetCPUandMemoryUsageOfProcessByPID_ReubenPython3Class', 'LowPassFilterForDictsOfLists_ReubenPython2and3Class', 'numpy', 'pexpect', 'psutil', 'pyautogui', 'ReubenGithubCodeModulePaths']
 
-ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_All:['CameraStreamerClass_ReubenPython2and3Class', 'CSVdataLogger_ReubenPython3Class', 'cv2', 'future.builtins', 'LowPassFilter_ReubenPython2and3Class', 'LowPassFilterForDictsOfLists_ReubenPython2and3Class', 'MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class', 'MyPrint_ReubenPython2and3Class', 'numpy', 'pexpect', 'psutil', 'scipy.spatial.transform']
+ArucoTagDetectionFromCameraFeed_ReubenPython3Class, ListOfModuleDependencies_All:['CameraStreamerClass_ReubenPython2and3Class', 'CSVdataLogger_ReubenPython3Class', 'cv2', 'EntryListWithBlinking_ReubenPython2and3Class', 'GetCPUandMemoryUsageOfProcessByPID_ReubenPython3Class', 'keyboard', 'LowPassFilter_ReubenPython2and3Class', 'LowPassFilterForDictsOfLists_ReubenPython2and3Class', 'MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class', 'numpy', 'pexpect', 'psutil', 'pyautogui', 'ReubenGithubCodeModulePaths', 'scipy.spatial.transform', 'UDPdataExchanger_ReubenPython3Class']
 
-INCLUDE ALL OF THE OTHER INSTALLATION FOR DEPENDCIES!
+pip install opencv-contrib-python==4.12.0.88
 
-pip install opencv-contrib-python==4.5.5.64
-
-pip install numpy==1.26 #Does'nt work with numpy >= 2
+pip install numpy==2.2.6
 
 pip install future
 
-pip install scipy
+pip install scipy==1.16.3
 
 pip install psutil
 
