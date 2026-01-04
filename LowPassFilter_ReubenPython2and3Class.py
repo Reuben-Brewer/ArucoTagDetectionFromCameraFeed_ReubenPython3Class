@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision J, 11/10/2024
+Software Revision K, 12/27/2025
 
-Verified working on: Python 2.7, 3.8 for Windows 8.1, 10 64-bit, Ubuntu 20.04, and Raspberry Pi Buster (no Mac testing yet).
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit, Ubuntu 20.04, and Raspberry Pi Bookworm (no Mac testing yet).
 '''
 
 __author__ = 'reuben.brewer'
+
+#######################################################################################################################
+#######################################################################################################################
+
+###########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+###########################################################
 
 ###########################################################
 import os
@@ -30,11 +38,14 @@ import traceback
 import statistics
 ###########################################################
 
+#######################################################################################################################
+#######################################################################################################################
+
 class LowPassFilter_ReubenPython2and3Class():
 
     ##########################################################################################################
     ##########################################################################################################
-    def __init__(self, setup_dict):
+    def __init__(self, SetupDict):
 
         print("#################### LowPassFilter_ReubenPython2and3Class __init__ starting. ####################")
 
@@ -46,7 +57,7 @@ class LowPassFilter_ReubenPython2and3Class():
 
         #########################################################
         #########################################################
-        self.UpdateFilterParameters(setup_dict, StringPrefixToPrint="LowPassFilter_ReubenPython2and3Class __init__: ")
+        self.UpdateFilterParameters(SetupDict, StringPrefixToPrint="LowPassFilter_ReubenPython2and3Class __init__: ")
         #########################################################
         #########################################################
 
@@ -62,13 +73,6 @@ class LowPassFilter_ReubenPython2and3Class():
         #########################################################
         #########################################################
 
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def __del__(self):
-        pass
     ##########################################################################################################
     ##########################################################################################################
 
@@ -391,12 +395,12 @@ class LowPassFilter_ReubenPython2and3Class():
     
     ##########################################################################################################
     ##########################################################################################################
-    def UpdateFilterParameters(self, setup_dict, StringPrefixToPrint = ""):
+    def UpdateFilterParameters(self, SetupDict, StringPrefixToPrint = ""):
 
         ##########################################################
         #########################################################
-        if "UseMedianFilterFlag" in setup_dict:
-            self.UseMedianFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseMedianFilterFlag", setup_dict["UseMedianFilterFlag"])
+        if "UseMedianFilterFlag" in SetupDict:
+            self.UseMedianFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseMedianFilterFlag", SetupDict["UseMedianFilterFlag"])
         else:
             self.UseMedianFilterFlag = 1
 
@@ -407,8 +411,8 @@ class LowPassFilter_ReubenPython2and3Class():
 
         #########################################################
         #########################################################
-        if "MedianFilterKernelSize" in setup_dict:
-            self.MedianFilterKernelSize = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MedianFilterKernelSize", setup_dict["MedianFilterKernelSize"], 3.0, 100.0))
+        if "MedianFilterKernelSize" in SetupDict:
+            self.MedianFilterKernelSize = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MedianFilterKernelSize", SetupDict["MedianFilterKernelSize"], 3.0, 100.0))
 
         else:
             self.MedianFilterKernelSize = 5
@@ -420,8 +424,8 @@ class LowPassFilter_ReubenPython2and3Class():
 
         #########################################################
         #########################################################
-        if "UseExponentialSmoothingFilterFlag" in setup_dict:
-            self.UseExponentialSmoothingFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseExponentialSmoothingFilterFlag", setup_dict["UseExponentialSmoothingFilterFlag"])
+        if "UseExponentialSmoothingFilterFlag" in SetupDict:
+            self.UseExponentialSmoothingFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseExponentialSmoothingFilterFlag", SetupDict["UseExponentialSmoothingFilterFlag"])
         else:
             self.UseExponentialSmoothingFilterFlag = 1
 
@@ -432,8 +436,8 @@ class LowPassFilter_ReubenPython2and3Class():
 
         #########################################################
         #########################################################
-        if "ExponentialSmoothingFilterLambda" in setup_dict:
-            self.ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ExponentialSmoothingFilterLambda", setup_dict["ExponentialSmoothingFilterLambda"], 0.0, 1.0)
+        if "ExponentialSmoothingFilterLambda" in SetupDict:
+            self.ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ExponentialSmoothingFilterLambda", SetupDict["ExponentialSmoothingFilterLambda"], 0.0, 1.0)
 
         else:
             self.ExponentialSmoothingFilterLambda = 0.005

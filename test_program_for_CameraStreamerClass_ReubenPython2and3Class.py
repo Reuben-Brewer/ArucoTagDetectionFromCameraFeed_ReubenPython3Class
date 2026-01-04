@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision I, 02/02/2025
+Software Revision J, 12/30/2025
 
-Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Bullseye (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
+
+##########################################################################################################
+##########################################################################################################
+
+#########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
 
 #########################################################
 from CameraStreamerClass_ReubenPython2and3Class import *
@@ -29,18 +37,15 @@ import collections
 import numpy
 import argparse
 import json
+import math
+import traceback
 import keyboard
 #########################################################
 
 #########################################################
-if sys.version_info[0] < 3:
-    from Tkinter import * #Python 2
-    import tkFont
-    import ttk
-else:
-    from tkinter import * #Python 3
-    import tkinter.font as tkFont #Python 3
-    from tkinter import ttk
+from tkinter import *
+import tkinter.font as tkFont
+from tkinter import ttk
 #########################################################
 
 #########################################################
@@ -56,19 +61,22 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 #########################################################
 
+##########################################################################################################
+##########################################################################################################
+
 #######################################################################################################################
 #######################################################################################################################
 global ParametersToBeLoaded_Directory_Windows
-ParametersToBeLoaded_Directory_Windows = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Windows = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global ParametersToBeLoaded_Directory_LinuxNonRaspberryPi
-ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global ParametersToBeLoaded_Directory_LinuxRaspberryPi
-ParametersToBeLoaded_Directory_LinuxRaspberryPi = "//home//pinis//Desktop//CameraStreamerClass_ReubenPython2and3Class_PythonDeploymentFiles//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_LinuxRaspberryPi = "//home//pi//Desktop//CameraStreamerClass_ReubenPython2and3Class_PythonDeploymentFiles//ParametersToBeLoaded"
 
 global ParametersToBeLoaded_Directory_Mac
-ParametersToBeLoaded_Directory_Mac = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Mac = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 #######################################################################################################################
 #######################################################################################################################
 
@@ -357,27 +365,28 @@ def GUI_update_clock():
     global GUI_RootAfterCallbackInterval_Milliseconds
     global USE_GUI_FLAG
 
-    global CameraStreamerClass_ReubenPython2and3ClassObject
+    global CameraStreamerClass_Object
     global CameraStreamerClass_OPEN_FLAG
     global SHOW_IN_GUI_CameraStreamerClass_FLAG
 
-    global MyPrint_ReubenPython2and3ClassObject
+    global MyPrint_Object
     global MyPrint_OPEN_FLAG
     global SHOW_IN_GUI_MyPrint_FLAG
 
     if USE_GUI_FLAG == 1:
+
         if EXIT_PROGRAM_FLAG == 0:
         #########################################################
         #########################################################
 
             #########################################################
             if CameraStreamerClass_OPEN_FLAG == 1 and SHOW_IN_GUI_CameraStreamerClass_FLAG == 1:
-                CameraStreamerClass_ReubenPython2and3ClassObject.GUI_update_clock()
+                CameraStreamerClass_Object.GUI_update_clock()
             #########################################################
 
             #########################################################
             if MyPrint_OPEN_FLAG == 1 and SHOW_IN_GUI_MyPrint_FLAG == 1:
-                MyPrint_ReubenPython2and3ClassObject.GUI_update_clock()
+                MyPrint_Object.GUI_update_clock()
             #########################################################
 
             root.after(GUI_RootAfterCallbackInterval_Milliseconds, GUI_update_clock)
@@ -409,9 +418,19 @@ def GUI_Thread():
     global GUI_RootAfterCallbackInterval_Milliseconds
     global USE_TABS_IN_GUI_FLAG
 
+    global CameraStreamerClass_Object
+    global CameraStreamerClass_OPEN_FLAG
+
+    global MyPrint_Object
+    global MyPrint_OPEN_FLAG
+
     ################################################# KEY GUI LINE
     #################################################
     root = Tk()
+
+    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
+    root.title("test_program_for_CameraStreamerClass_ReubenPython2and3Class")
+    root.geometry('%dx%d+%d+%d' % (Camera_RootIfLaunchedStandalone_width, Camera_RootIfLaunchedStandalone_height, Camera_RootIfLaunchedStandalone_Xpos, Camera_RootIfLaunchedStandalone_Ypos)) # set the dimensions of the screen and where it is placed
     #################################################
     #################################################
 
@@ -441,6 +460,7 @@ def GUI_Thread():
         TabStyle = ttk.Style()
         TabStyle.configure('TNotebook.Tab', font=('Helvetica', '12', 'bold'))
         #############
+
         #################################################
     else:
         #################################################
@@ -452,17 +472,32 @@ def GUI_Thread():
     #################################################
     #################################################
 
+    #################################################
+    #################################################
+    if CameraStreamerClass_OPEN_FLAG == 1:
+        CameraStreamerClass_Object.CreateGUIobjects(TkinterParent=Tab_CameraStreamerClass)
+    #################################################
+    #################################################
+
+    #################################################
+    #################################################
+    if MyPrint_OPEN_FLAG == 1:
+        MyPrint_Object.CreateGUIobjects(TkinterParent=Tab_MyPrint)
+    #################################################
+    #################################################
+
     ################################################# THIS BLOCK MUST COME 2ND-TO-LAST IN def GUI_Thread() IF USING TABS.
-    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
-    root.title("test_program_for_CameraStreamerClass_ReubenPython2and3Class")
-    root.geometry('%dx%d+%d+%d' % (Camera_RootIfLaunchedStandalone_width, Camera_RootIfLaunchedStandalone_height, Camera_RootIfLaunchedStandalone_Xpos, Camera_RootIfLaunchedStandalone_Ypos)) # set the dimensions of the screen and where it is placed
+    #################################################
     root.after(GUI_RootAfterCallbackInterval_Milliseconds, GUI_update_clock)
     root.mainloop()
     #################################################
+    #################################################
 
     #################################################  THIS BLOCK MUST COME LAST IN def GUI_Thread() REGARDLESS OF CODE.
+    #################################################
     root.quit() #Stop the GUI thread, MUST BE CALLED FROM GUI_Thread
     root.destroy() #Close down the GUI thread, MUST BE CALLED FROM GUI_Thread
+    #################################################
     #################################################
 
 ##########################################################################################################
@@ -470,7 +505,13 @@ def GUI_Thread():
 
 ##########################################################################################################
 ##########################################################################################################
+##########################################################################################################
+##########################################################################################################
 if __name__ == '__main__':
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ################################################
     ################################################
@@ -565,9 +606,9 @@ if __name__ == '__main__':
     print("ReturnedDict: " + str(ReturnedDict))
 
     if len(ReturnedDict) == 0:
-        ################################################# CNA HARD-WIRE THE VALUES HERE WITHOUT USING AN INPUT FILE
+        ################################################# CAN HARD-WIRE THE VALUES HERE WITHOUT USING AN INPUT FILE
         camera_TkinterPreviewImageScalingFactor =  0.70
-        camera_selection_number =  0
+        camera_selection_number =  1
         camera_Dshow_EnglishName  = ""
         CameraCaptureThread_TimeToSleepEachLoop = 0.030
         CameraEncodeThread_TimeToSleepEachLoop = 0.030
@@ -577,7 +618,7 @@ if __name__ == '__main__':
         image_height = 480
         image_jpg_encoding_quality = 100
         CameraSetting_Autofocus = 0
-        CameraSetting_Autoexposure = 0
+        CameraSetting_Autoexposure = 1
         CameraSetting_exposure = -10
         CameraSetting_gain = 0
         CameraSetting_brightness = 0
@@ -588,7 +629,7 @@ if __name__ == '__main__':
         EnableImageSavingThreadFlag = 1
         RemoveFisheyeDistortionFromImage_Flag = 0
         OpenCVwindow_UpdateEveryNmilliseconds = 30
-        OpenCVbackendToUseEnglishName = "CAP_MSMF"
+        OpenCVbackendToUseEnglishName = "CAP_ANY"
         Camera_SavedImages_LocalDirectoryNameNoSlashes =  "SavedImages"
         Camera_SavedImages_FilenamePrefix =  "Camera_"
         Camera_RootIfLaunchedStandalone_Xpos = 0
@@ -701,9 +742,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-
-    #################################################
-    global CameraStreamerClass_ReubenPython2and3ClassObject
+    global CameraStreamerClass_Object
 
     global CameraStreamerClass_OPEN_FLAG
     CameraStreamerClass_OPEN_FLAG = -1
@@ -717,162 +756,195 @@ if __name__ == '__main__':
     global CameraStreamerClass_MostRecentDict_Time
     CameraStreamerClass_MostRecentDict_Time = -11111.0
     #################################################
-
-    #################################################
     #################################################
 
     #################################################
     #################################################
-    global MyPrint_ReubenPython2and3ClassObject
+    global MyPrint_Object
 
     global MyPrint_OPEN_FLAG
     MyPrint_OPEN_FLAG = -1
     #################################################
     #################################################
 
-    #################################################  KEY GUI LINE
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
     #################################################
-    if USE_GUI_FLAG == 1:
+    #################################################
+    global CameraStreamerClass_GUIparametersDict
+    CameraStreamerClass_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CameraStreamerClass_FLAG),
+                                                ("EnableInternal_MyPrint_Flag", 1),
+                                                ("NumberOfPrintLines", 10),
+                                                ("UseBorderAroundThisGuiObjectFlag", 0),
+                                                ("GUI_ROW", GUI_ROW_CameraStreamerClass),
+                                                ("GUI_COLUMN", GUI_COLUMN_CameraStreamerClass),
+                                                ("GUI_PADX", GUI_PADX_CameraStreamerClass),
+                                                ("GUI_PADY", GUI_PADY_CameraStreamerClass),
+                                                ("GUI_ROWSPAN", GUI_ROWSPAN_CameraStreamerClass),
+                                                ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CameraStreamerClass)])
+
+    global CameraStreamerClass_SetupDict
+    CameraStreamerClass_SetupDict = dict([("GUIparametersDict", CameraStreamerClass_GUIparametersDict),
+                                        ("NameToDisplay_UserSet", "Camera"),
+                                        ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
+                                        ("camera_selection_number", camera_selection_number),
+                                        ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
+                                        ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
+                                        ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
+                                        ("camera_frame_rate", camera_frame_rate),
+                                        ("image_width", image_width),
+                                        ("image_height", image_height),
+                                        ("image_jpg_encoding_quality", image_jpg_encoding_quality),
+                                        ("CameraSetting_Autofocus", CameraSetting_Autofocus),
+                                        ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
+                                        ("CameraSetting_exposure", CameraSetting_exposure),
+                                        ("CameraSetting_gain", CameraSetting_gain),
+                                        ("CameraSetting_brightness", CameraSetting_brightness),
+                                        ("CameraSetting_contrast", CameraSetting_contrast),
+                                        ("CameraSetting_saturation", CameraSetting_saturation),
+                                        ("CameraSetting_hue", CameraSetting_hue),
+                                        ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
+                                        ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
+                                        ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
+                                        ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
+                                        ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix),
+                                        ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes)])
+
+                                        #("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
+                                        #("CameraCalibrationParametersDict", CameraCalibrationParametersDict)
+
+    if USE_CameraStreamerClass_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        try:
+            CameraStreamerClass_Object = CameraStreamerClass_ReubenPython2and3Class(CameraStreamerClass_SetupDict)
+            CameraStreamerClass_OPEN_FLAG = CameraStreamerClass_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("CameraStreamerClass_Object __init__: Exceptions: %s" % exceptions)
+            traceback.print_exc()
+    #################################################
+    #################################################
+    
+    #################################################
+    #################################################
+    if USE_CameraStreamerClass_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if CameraStreamerClass_OPEN_FLAG != 1:
+                print("Failed to open CameraStreamerClass_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    #################################################
+    #################################################
+    global MyPrint_GUIparametersDict
+    MyPrint_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
+                                        ("UseBorderAroundThisGuiObjectFlag", 0),
+                                        ("GUI_ROW", GUI_ROW_MyPrint),
+                                        ("GUI_COLUMN", GUI_COLUMN_MyPrint),
+                                        ("GUI_PADX", GUI_PADX_MyPrint),
+                                        ("GUI_PADY", GUI_PADY_MyPrint),
+                                        ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
+                                        ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
+
+    global MyPrint_SetupDict
+    MyPrint_SetupDict = dict([("NumberOfPrintLines", 10),
+                            ("WidthOfPrintingLabel", 200),
+                            ("PrintToConsoleFlag", 1),
+                            ("LogFileNameFullPath", os.path.join(os.getcwd(), "TestLog.txt")),
+                            ("GUIparametersDict", MyPrint_GUIparametersDict)])
+
+    if USE_MyPrint_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        try:
+            MyPrint_Object = MyPrint_ReubenPython2and3Class(MyPrint_SetupDict)
+            MyPrint_OPEN_FLAG = MyPrint_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("MyPrint_Object __init__: Exceptions: %s" % exceptions)
+            traceback.print_exc()
+    #################################################
+    #################################################
+
+    #################################################
+    #################################################
+    if USE_MyPrint_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if MyPrint_OPEN_FLAG != 1:
+                print("Failed to open MyPrint_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    if USE_KEYBOARD_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        keyboard.on_press_key("esc", ExitProgram_Callback)
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ########################################################################################################## KEY GUI LINE
+    ##########################################################################################################
+    ##########################################################################################################
+    if USE_GUI_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         print("Starting GUI thread...")
-        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread)
-        GUI_Thread_ThreadingObject.setDaemon(True) #Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
+        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread, daemon=True) #Daemon=True means that the GUI thread is destroyed automatically when the main thread is destroyed
         GUI_Thread_ThreadingObject.start()
-        time.sleep(0.5)  #Allow enough time for 'root' to be created that we can then pass it into other classes.
     else:
         root = None
         Tab_MainControls = None
         Tab_CameraStreamerClass = None
         Tab_MyPrint = None
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################
-    #################################################
-    global CameraStreamerClass_ReubenPython2and3ClassObject_GUIparametersDict
-    CameraStreamerClass_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CameraStreamerClass_FLAG),
-                                    ("root", Tab_CameraStreamerClass),
-                                    ("EnableInternal_MyPrint_Flag", 1),
-                                    ("NumberOfPrintLines", 10),
-                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_CameraStreamerClass),
-                                    ("GUI_COLUMN", GUI_COLUMN_CameraStreamerClass),
-                                    ("GUI_PADX", GUI_PADX_CameraStreamerClass),
-                                    ("GUI_PADY", GUI_PADY_CameraStreamerClass),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_CameraStreamerClass),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CameraStreamerClass)])
-
-    global CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict
-    CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict = dict([("GUIparametersDict", CameraStreamerClass_ReubenPython2and3ClassObject_GUIparametersDict),
-                                                                        ("NameToDisplay_UserSet", "Camera"),
-                                                                        ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
-                                                                        ("camera_selection_number", camera_selection_number),
-                                                                        ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
-                                                                        ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
-                                                                        ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
-                                                                        ("camera_frame_rate", camera_frame_rate),
-                                                                        ("image_width", image_width),
-                                                                        ("image_height", image_height),
-                                                                        ("image_jpg_encoding_quality", image_jpg_encoding_quality),
-                                                                        ("CameraSetting_Autofocus", CameraSetting_Autofocus),
-                                                                        ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
-                                                                        ("CameraSetting_exposure", CameraSetting_exposure),
-                                                                        ("CameraSetting_gain", CameraSetting_gain),
-                                                                        ("CameraSetting_brightness", CameraSetting_brightness),
-                                                                        ("CameraSetting_contrast", CameraSetting_contrast),
-                                                                        ("CameraSetting_saturation", CameraSetting_saturation),
-                                                                        ("CameraSetting_hue", CameraSetting_hue),
-                                                                        ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
-                                                                        ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
-                                                                        ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
-                                                                        ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
-                                                                        ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix),
-                                                                        ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes)])
-
-                                                                        #("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
-                                                                        #("CameraCalibrationParametersDict", CameraCalibrationParametersDict)
-
-    if USE_CameraStreamerClass_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-        try:
-            CameraStreamerClass_ReubenPython2and3ClassObject = CameraStreamerClass_ReubenPython2and3Class(CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict)
-            CameraStreamerClass_OPEN_FLAG = CameraStreamerClass_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if USE_CameraStreamerClass_FLAG == 1 and CameraStreamerClass_OPEN_FLAG != 1:
-                print("Failed to open CameraStreamerClass_ReubenPython2and3Class.")
-                ExitProgram_Callback()
-            #################################################
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("CameraStreamerClass_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    if USE_MyPrint_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-
-        MyPrint_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
-                                                                        ("root", Tab_MyPrint),
-                                                                        ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                        ("GUI_ROW", GUI_ROW_MyPrint),
-                                                                        ("GUI_COLUMN", GUI_COLUMN_MyPrint),
-                                                                        ("GUI_PADX", GUI_PADX_MyPrint),
-                                                                        ("GUI_PADY", GUI_PADY_MyPrint),
-                                                                        ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
-                                                                        ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
-
-        MyPrint_ReubenPython2and3ClassObject_setup_dict = dict([("NumberOfPrintLines", 10),
-                                                                ("WidthOfPrintingLabel", 200),
-                                                                ("PrintToConsoleFlag", 1),
-                                                                ("LogFileNameFullPath", os.getcwd() + "//TestLog.txt"),
-                                                                ("GUIparametersDict", MyPrint_ReubenPython2and3ClassObject_GUIparametersDict)])
-
-        try:
-            MyPrint_ReubenPython2and3ClassObject = MyPrint_ReubenPython2and3Class(MyPrint_ReubenPython2and3ClassObject_setup_dict)
-            MyPrint_OPEN_FLAG = MyPrint_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if MyPrint_OPEN_FLAG != 1:
-                print("Failed to open MyPrint_ReubenPython2and3ClassObject.")
-                ExitProgram_Callback()
-            #################################################
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("MyPrint_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    if USE_KEYBOARD_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-        keyboard.on_press_key("esc", ExitProgram_Callback)
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
     if EXIT_PROGRAM_FLAG == 0:
         print("Starting main loop 'test_program_for_CameraStreamerClass_ReubenPython2and3Class.")
         StartingTime_MainLoopThread = getPreciseSecondsTimeStampString()
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
     while(EXIT_PROGRAM_FLAG == 0):
 
         ###################################################
+        ###################################################
         CurrentTime_MainLoopThread = getPreciseSecondsTimeStampString() - StartingTime_MainLoopThread
+        ###################################################
         ###################################################
 
         ################################################### GET's
+        ###################################################
         if CameraStreamerClass_OPEN_FLAG == 1:
 
-            CameraStreamerClass_MostRecentDict = CameraStreamerClass_ReubenPython2and3ClassObject.GetMostRecentDataDict()
+            CameraStreamerClass_MostRecentDict = CameraStreamerClass_Object.GetMostRecentDataDict()
 
             if "Time" in CameraStreamerClass_MostRecentDict:
                 CameraStreamerClass_MostRecentDict_OriginalImage = CameraStreamerClass_MostRecentDict["OriginalImage"]
@@ -880,27 +952,33 @@ if __name__ == '__main__':
 
                 #print("CameraStreamerClass_MostRecentDict_Time: " + str(CameraStreamerClass_MostRecentDict_Time))
         ###################################################
+        ###################################################
 
         time.sleep(0.030)
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    ################################################# THIS IS THE EXIT ROUTINE!
-    #################################################
+    ########################################################################################################## THIS IS THE EXIT ROUTINE!
+    ##########################################################################################################
+    ##########################################################################################################
     print("Exiting main program 'test_program_for_CameraStreamerClass_ReubenPython2and3Class.")
 
     #################################################
     if CameraStreamerClass_OPEN_FLAG == 1:
-        CameraStreamerClass_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        CameraStreamerClass_Object.ExitProgram_Callback()
     #################################################
 
     #################################################
     if MyPrint_OPEN_FLAG == 1:
-        MyPrint_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        MyPrint_Object.ExitProgram_Callback()
     #################################################
 
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
+##########################################################################################################
+##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################

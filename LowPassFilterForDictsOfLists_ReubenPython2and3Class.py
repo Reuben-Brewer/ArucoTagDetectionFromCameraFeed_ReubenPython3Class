@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision E, 09/07/2024
+Software Revision I, 12/22/2025
 
-Verified working on: Python 3.8 for Windows 10 64-bit, Ubuntu 20.04, and Raspberry Pi Buster (no Mac testing yet).
+Verified working on: 3.11/12/13 for Windows 10/11 64-bit, Ubuntu 20.04, and Raspberry Pi Bookworm (no Mac testing yet).
 '''
 
 __author__ = 'reuben.brewer'
+
+#######################################################################################################################
+#######################################################################################################################
+
+###########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+###########################################################
 
 ###########################################################
 import os
@@ -31,15 +39,18 @@ from copy import * #for deepcopy(dict)
 
 ###########################################################
 
+#######################################################################################################################
+#######################################################################################################################
+
 class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
 
     ##########################################################################################################
     ##########################################################################################################
-    def __init__(self, setup_dict):
+    def __init__(self, SetupDict):
 
         print("#################### LowPassFilterForDictsOfLists_ReubenPython2and3Class __init__ starting. ####################")
 
-        self.setup_dict = setup_dict
+        self.SetupDict = SetupDict
 
         #########################################################
         #########################################################
@@ -49,14 +60,14 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
 
         #########################################################
         #########################################################
-        if "DictOfVariableFilterSettings" in self.setup_dict:
-            self.DictOfVariableFilterSettings = self.setup_dict["DictOfVariableFilterSettings"]
+        if "DictOfVariableFilterSettings" in self.SetupDict:
+            self.DictOfVariableFilterSettings = self.SetupDict["DictOfVariableFilterSettings"]
 
             '''
             #STILL NEED TO IMPLEMENT A CHECK OF ALL VALUES
-            self.UseMedianFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseMedianFilterFlag", self.setup_dict["UseMedianFilterFlag"])
-            self.UseExponentialSmoothingFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseExponentialSmoothingFilterFlag", self.setup_dict["UseExponentialSmoothingFilterFlag"])
-            self.ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ExponentialSmoothingFilterLambda", self.setup_dict["ExponentialSmoothingFilterLambda"], 0.0, 1.0)
+            self.UseMedianFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseMedianFilterFlag", self.SetupDict["UseMedianFilterFlag"])
+            self.UseExponentialSmoothingFilterFlag = self.PassThrough0and1values_ExitProgramOtherwise("UseExponentialSmoothingFilterFlag", self.SetupDict["UseExponentialSmoothingFilterFlag"])
+            self.ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ExponentialSmoothingFilterLambda", self.SetupDict["ExponentialSmoothingFilterLambda"], 0.0, 1.0)
             '''
 
         else:
@@ -99,79 +110,7 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
 
     ##########################################################################################################
     ##########################################################################################################
-    def __del__(self):
-        pass
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
-
-        try:
-            InputNumber_ConvertedToFloat = float(InputNumber)
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
-                sys.exit()
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            #input("Press any key to continue")
-            #sys.exit()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
-        try:
-            InputNumber_ConvertedToFloat = float(InputNumber)
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be in the range [" +
-                          str(RangeMinValue) +
-                          ", " +
-                          str(RangeMaxValue) +
-                          "] (value was " +
-                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-
-                sys.exit()
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            #input("Press any key to continue")
-            #sys.exit()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def LimitNumber(self, min_val, max_val, test_val):
-
+    def LimitNumber_IntOutputOnly(self, min_val, max_val, test_val):
         if test_val > max_val:
             test_val = max_val
 
@@ -181,7 +120,191 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
         else:
             test_val = test_val
 
+        test_val = int(test_val)
+
         return test_val
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def LimitNumber_FloatOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = float(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
+        except:
+
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be 0 or 1 (value was " +
+                      str(InputNumber_ConvertedToFloat) +
+                      ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
+        except:
+
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
+        except:
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
+        except:
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -200,8 +323,8 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
                                                                      NewDictOfVariableFilterSettings[VariableNameString]["ExponentialSmoothingFilterLambda"])
                 #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: VariableNameString " + VariableNameString + " was found in self.DictOfVariableFilterSettings.")
 
-        #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: NewDictOfVariableFilterSettings = " + str(NewDictOfVariableFilterSettings))
-        #print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: self.DictOfVariableFilterSettings =" + str(self.DictOfVariableFilterSettings))
+        print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: NewDictOfVariableFilterSettings = " + str(NewDictOfVariableFilterSettings))
+        print("AddOrUpdateDictOfVariableFilterSettingsFromExternalProgram: self.DictOfVariableFilterSettings =" + str(self.DictOfVariableFilterSettings))
     ##########################################################################################################
     ##########################################################################################################
 
@@ -220,7 +343,7 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
                     print("UpdateVariableFilterSettingsFromExternalProgram: Error, UseExponentialSmoothingFilterFlag must be in [0, 1].")
                     return -1
 
-                ExponentialSmoothingFilterLambda_Limited = self.LimitNumber(0.0, 1.0, ExponentialSmoothingFilterLambda)
+                ExponentialSmoothingFilterLambda_Limited = self.LimitNumber_FloatOutputOnly(0.0, 1.0, ExponentialSmoothingFilterLambda)
 
                 self.DictOfVariableFilterSettings[VariableNameString]["UseMedianFilterFlag"] = UseMedianFilterFlag
                 self.DictOfVariableFilterSettings[VariableNameString]["UseExponentialSmoothingFilterFlag"] = UseExponentialSmoothingFilterFlag
@@ -300,7 +423,7 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
     ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
-    def AddDataDictFromExternalProgram(self, DataDictOfNewPointsForMultipleVariables):
+    def AddDataDictFromExternalProgram(self, DataDictOfNewPointsForMultipleVariables, PrintInfoForDebuggingFlag = 0):
 
         try:
             #print("AddDataDictFromExternalProgram: self.DataDictOfNewPointsForMultipleVariables = " + str(DataDictOfNewPointsForMultipleVariables))
@@ -344,7 +467,7 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
                     else:
                         ###############################################
                         for Index, Value in enumerate(UpdatedValuesList):
-                            self.UpdateOneVariableWithNewValue(VariableNameString, Index, Value)
+                            self.UpdateOneVariableWithNewValue(VariableNameString, Index, Value, PrintInfoForDebuggingFlag)
                         ###############################################
 
                     ###############################################
@@ -379,71 +502,93 @@ class LowPassFilterForDictsOfLists_ReubenPython2and3Class():
 
     ##########################################################################################################
     ##########################################################################################################
-    def UpdateOneVariableWithNewValue(self, VariableNameStr, ListIndex, NewValue):
+    ##########################################################################################################
+    ##########################################################################################################
+    def UpdateOneVariableWithNewValue(self, VariableNameStr, ListIndex, NewValue, PrintInfoForDebuggingFlag = 0):
 
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
         try:
 
-            #print("UpdateOneVariableWithNewValue: " + str(VariableNameStr) + ", ListIndex = " + ", NewValue = " + str(NewValue))
-
-            ###############################################
-            ###############################################
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
             NewValue = float(NewValue)
+            ##########################################################################################################
+            ##########################################################################################################
 
-            ###############################################
-            ###############################################
-            self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex] = list(numpy.roll(self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex], 1)) #MUST EXPLICITLY MAKE NEW LIST() FOR THIS TO WORK PROPERLY
+            ##########################################################################################################
+            ##########################################################################################################
+            if PrintInfoForDebuggingFlag == 1:
+                print("UpdateOneVariableWithNewValue: " + str(VariableNameStr) + ", ListIndex = " + ", NewValue = " + str(NewValue))
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex] = list(numpy.roll(self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex], 1).tolist()) #MUST EXPLICITLY MAKE NEW LIST() FOR THIS TO WORK PROPERLY
             self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][0] = NewValue  #Add the incoming data point
-            ###############################################
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
 
-            ###############################################
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
+            self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex] = list(numpy.roll(self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex], 1).tolist()) #MUST EXPLICITLY MAKE NEW LIST() FOR THIS TO WORK PROPERLY
+            ##########################################################################################################
+            ##########################################################################################################
 
-            ###############################################
-            self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex] = list(numpy.roll(self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex], 1)) #MUST EXPLICITLY MAKE NEW LIST() FOR THIS TO WORK PROPERLY
-            ###############################################
-
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
             # fmedian = median5(fval_prev4, fval_prev3, fval_prev2, fval_prev1, fval_new);
             MedianValue_BoseNelson = self.ComputeMedian5point_BoseNelson(self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][4],
                                                                          self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][3],
                                                                          self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][2],
                                                                          self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][1],
                                                                          self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][0])
-            #MedianValue_Numpy = numpy.median(self.__SignalInRawHistoryList) MedianValue_Numpy is much slower than MedianValue_BoseNelson
+
+            #MedianValue_Numpy = numpy.median(self.__SignalInRawHistoryList) #MedianValue_Numpy is much slower than MedianValue_BoseNelson, so don't use this.
             #print str(MedianValue_BoseNelson - MedianValue_Numpy)
 
             if self.VariablesDict[VariableNameStr]["UseMedianFilterFlag"] == 1:
                 self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0] = MedianValue_BoseNelson
             else:
                 self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0] = NewValue
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
 
-            ###############################################
-            if self.VariablesDict[VariableNameStr]["UseExponentialSmoothingFilterFlag"] == 1:
-                #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
-                self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0] = self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"] * self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][0] + (1.0 - self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"]) * self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][1]
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
+            if self.VariablesDict[VariableNameStr]["UseExponentialSmoothingFilterFlag"] == 1:  #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
+                self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0] = self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"] * self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0] + (1.0 - self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"]) * self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][1]
+            ##########################################################################################################
+            ##########################################################################################################
 
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
             self.VariablesDict[VariableNameStr]["Raw_MostRecentValuesList"][ListIndex] = self.VariablesDict[VariableNameStr]["__SignalInRawHistoryList"][ListIndex][0]
             self.VariablesDict[VariableNameStr]["Filtered_MostRecentValuesList"][ListIndex] = self.VariablesDict[VariableNameStr]["__SignalOutFilteredHistoryList"][ListIndex][0]
-            ###############################################
-
-            ###############################################
-            ###############################################
+            ##########################################################################################################
+            ##########################################################################################################
 
             #print("VariableNameStr Lambda: " + VariableNameStr + " = " + str(self.VariablesDict[VariableNameStr]["ExponentialSmoothingFilterLambda"]))
 
-            ###############################################
-            ###############################################
-            ###############################################
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
 
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
         except:
             exceptions = sys.exc_info()[0]
             print("UpdateOneVariableWithNewValue, exceptions: %s" % exceptions)
             traceback.print_exc()
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 

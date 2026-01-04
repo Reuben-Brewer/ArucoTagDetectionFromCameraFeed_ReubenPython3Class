@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision E, 02/02/2024
+Software Revision G, 12/22/2025
 
-Verified working on: Python 3.12 for Windows 11 64-bit.
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit and Raspberry Pi Bookworm.
 '''
 
 __author__ = 'reuben.brewer'
+
+##########################################################################################################
+##########################################################################################################
+
+##########################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+##########################################
 
 ##########################################
 from LowPassFilterForDictsOfLists_ReubenPython2and3Class import *
@@ -70,12 +78,14 @@ if platform.system() == "Windows":
     winmm.timeBeginPeriod(1) #Set minimum timer resolution to 1ms so that time.sleep(0.001) behaves properly.
 ##########################################
 
-#########################################################
+##########################################################################################################
+##########################################################################################################
+
 class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __init__(self, setup_dict): #Subclass the Tkinter Frame
+    def __init__(self, SetupDict): #Subclass the Tkinter Frame
 
         print("#################### UDPdataExchanger_ReubenPython3Class __init__ starting. ####################")
 
@@ -96,12 +106,7 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         self.LastTime_CalculatedFromMainThread = -11111.0
         self.StartingTime_CalculatedFromMainThread = -11111.0
         self.DataStreamingFrequency_CalculatedFromMainThread = -11111.0
-        self.DataStreamingFrequency_CalculatedFromMainThread_2 = -11111.0
         self.DataStreamingDeltaT_CalculatedFromMainThread = -11111.0
-
-        self.CurrentTime_CalculateMeasurementTorqueDerivative = -11111.0
-        self.LastTime_CalculateMeasurementTorqueDerivative = -11111.0
-        self.DataStreamingDeltaT_CalculateMeasurementTorqueDerivative = -11111.0
         #########################################################
         #########################################################
 
@@ -113,8 +118,9 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         self.UDP_RxPacketsReceivedCounter = 0
         self.UDP_TxPacketsTransmittedCounter = 0
 
-        self.UDP_RxLastTimePacketWasReceived = -11111.0
-        self.WatchdogTimerExpirationState = 1
+        self.UDP_RxLastTimePacketWasReceived = 0.0
+        self.WatchdogTimerExpirationState = 0
+        self.TimeSinceWatchdogWasKicked = 0.0
 
         self.DataStream_State = 1 #Starts out communicating data
 
@@ -157,8 +163,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "GUIparametersDict" in setup_dict:
-            self.GUIparametersDict = setup_dict["GUIparametersDict"]
+        if "GUIparametersDict" in SetupDict:
+            self.GUIparametersDict = SetupDict["GUIparametersDict"]
 
             #########################################################
             #########################################################
@@ -168,16 +174,6 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                 self.USE_GUI_FLAG = 0
 
             print("UDPdataExchanger_ReubenPython3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            if "root" in self.GUIparametersDict:
-                self.root = self.GUIparametersDict["root"]
-            else:
-                print("UDPdataExchanger_ReubenPython3Class __init__: ERROR, must pass in 'root'")
-                return
             #########################################################
             #########################################################
 
@@ -312,8 +308,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "NameToDisplay_UserSet" in setup_dict:
-            self.NameToDisplay_UserSet = str(setup_dict["NameToDisplay_UserSet"])
+        if "NameToDisplay_UserSet" in SetupDict:
+            self.NameToDisplay_UserSet = str(SetupDict["NameToDisplay_UserSet"])
         else:
             self.NameToDisplay_UserSet = ""
 
@@ -323,8 +319,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "WatchdogTimerExpirationDurationSeconds" in setup_dict:
-            self.WatchdogTimerExpirationDurationSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("WatchdogTimerExpirationDurationSeconds", setup_dict["WatchdogTimerExpirationDurationSeconds"], 0.000, 100000.0)
+        if "WatchdogTimerExpirationDurationSeconds" in SetupDict:
+            self.WatchdogTimerExpirationDurationSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("WatchdogTimerExpirationDurationSeconds", SetupDict["WatchdogTimerExpirationDurationSeconds"], 0.000, 100000.0)
 
         else:
             self.WatchdogTimerExpirationDurationSeconds = 0.25
@@ -335,7 +331,10 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        self.UpdateSetupDictParameters(setup_dict)
+        SuccessFlag = self.UpdateSetupDictParameters(SetupDict)
+        if SuccessFlag != 1:
+            print("UDPdataExchanger_ReubenPython3Class __init__: UpdateSetupDictParameters() failed.")
+            return
         #########################################################
         #########################################################
 
@@ -344,11 +343,11 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
-        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings = dict([("DataStreamingFrequency_CalculatedFromMainThread", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", 0.05)]))])
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings = dict([("DataStreamingFrequency_CalculatedFromMainThread", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", 0.05)]))])
 
-        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict = dict([("DictOfVariableFilterSettings", self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings)])
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_SetupDict = dict([("DictOfVariableFilterSettings", self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_DictOfVariableFilterSettings)])
 
-        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject = LowPassFilterForDictsOfLists_ReubenPython2and3Class(self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict)
+        self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject = LowPassFilterForDictsOfLists_ReubenPython2and3Class(self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_SetupDict)
         self.LOWPASSFILTER_OPEN_FLAG = self.LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
         #########################################################
 
@@ -393,19 +392,6 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if self.USE_GUI_FLAG == 1:
-            self.StartGUI(self.root)
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
-        time.sleep(0.25)
-        #########################################################
-        #########################################################
-
-        #########################################################
-        #########################################################
         self.OBJECT_CREATED_SUCCESSFULLY_FLAG = 1
         #########################################################
         #########################################################
@@ -415,23 +401,16 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __del__(self):
-        pass
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def UpdateSetupDictParameters(self, setup_dict):
+    def UpdateSetupDictParameters(self, SetupDict):
 
         #########################################################
         #########################################################
-        if "UDP_RxOrTxRole" in setup_dict:
-            self.UDP_RxOrTxRole = str(setup_dict["UDP_RxOrTxRole"])
+        if "UDP_RxOrTxRole" in SetupDict:
+            self.UDP_RxOrTxRole = str(SetupDict["UDP_RxOrTxRole"]).lower()
 
             if self.UDP_RxOrTxRole not in ["rx", "tx"]:
                 print("UDPdataExchanger_ReubenPython3Class __init__: Error: UDP_RxOrTxRole must be 'rx' or 'tx'.")
-                return
+                return 0
 
         else:
             self.UDP_RxOrTxRole = "rx"
@@ -442,8 +421,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "IPV4_address" in setup_dict:
-            self.IPV4_address = str(setup_dict["IPV4_address"])
+        if "IPV4_address" in SetupDict:
+            self.IPV4_address = str(SetupDict["IPV4_address"])
 
         else:
             self.IPV4_address = "127.0.0.1"
@@ -454,8 +433,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "IPV4_Port" in setup_dict:
-            self.IPV4_Port = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("IPV4_Port", setup_dict["IPV4_Port"], 1, 65535)) #port 0 doesn't work
+        if "IPV4_Port" in SetupDict:
+            self.IPV4_Port = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("IPV4_Port", SetupDict["IPV4_Port"], 1, 65535)) #port 0 doesn't work
 
         else:
             self.IPV4_Port = 1
@@ -466,8 +445,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "UDP_BufferSizeInBytes" in setup_dict:
-            self.UDP_BufferSizeInBytes = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_BufferSizeInBytes", setup_dict["UDP_BufferSizeInBytes"], 1, 1500)) #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
+        if "UDP_BufferSizeInBytes" in SetupDict:
+            self.UDP_BufferSizeInBytes = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_BufferSizeInBytes", SetupDict["UDP_BufferSizeInBytes"], 1, 1500)) #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
 
         else:
             self.UDP_BufferSizeInBytes = 64
@@ -478,25 +457,31 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        if "UDP_TimeoutInSeconds" in setup_dict:
-            self.UDP_TimeoutInSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_TimeoutInSeconds", setup_dict["UDP_TimeoutInSeconds"], 0.0, 1000000.0)
+        if "UDP_TimeoutAtPortLevelInSeconds" in SetupDict:
+            self.UDP_TimeoutAtPortLevelInSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("UDP_TimeoutAtPortLevelInSeconds", SetupDict["UDP_TimeoutAtPortLevelInSeconds"], 0.0, 1000000.0)
 
         else:
-            self.UDP_TimeoutInSeconds = 1.0
+            self.UDP_TimeoutAtPortLevelInSeconds = 1.0
 
-        print("UDPdataExchanger_ReubenPython3Class __init__: UDP_TimeoutInSeconds: " + str(self.UDP_TimeoutInSeconds))
+        print("UDPdataExchanger_ReubenPython3Class __init__: UDP_TimeoutAtPortLevelInSeconds: " + str(self.UDP_TimeoutAtPortLevelInSeconds))
         #########################################################
         #########################################################
 
         #########################################################
         #########################################################
-        if "MainThread_TimeToSleepEachLoop" in setup_dict:
-            self.MainThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MainThread_TimeToSleepEachLoop", setup_dict["MainThread_TimeToSleepEachLoop"], 0.001, 100000)
+        if "MainThread_TimeToSleepEachLoop" in SetupDict:
+            self.MainThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MainThread_TimeToSleepEachLoop", SetupDict["MainThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
             self.MainThread_TimeToSleepEachLoop = 0.002
 
         print("UDPdataExchanger_ReubenPython3Class __init__: MainThread_TimeToSleepEachLoop: " + str(self.MainThread_TimeToSleepEachLoop))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        return 1
         #########################################################
         #########################################################
 
@@ -541,65 +526,164 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag=1):
 
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
 
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be 0 or 1 (value was " +
+                      str(InputNumber_ConvertedToFloat) +
+                      ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
 
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be in the range [" +
-                          str(RangeMinValue) +
-                          ", " +
-                          str(RangeMaxValue) +
-                          "] (value was " +
-                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -717,7 +801,7 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                 self.UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  #AF_INET for internet, SOCK_DGRAM for UDP
                 self.UDP_SocketObject.bind((self.IPV4_address, self.IPV4_Port)) #bind() needed only on the client/Rx side, not on the server/Tx side.
             
-                self.UDP_SocketObject.settimeout(self.UDP_TimeoutInSeconds) #Without a timeout set, the while 1: loop will continue forever when the keyboard-press triggers a program exit.
+                self.UDP_SocketObject.settimeout(self.UDP_TimeoutAtPortLevelInSeconds) #Without a timeout set, the while 1: loop will continue forever when the keyboard-press triggers a program exit.
             
                 self.UDP_SocketObject.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.UDP_BufferSizeInBytes)
 
@@ -961,15 +1045,19 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             ##########################################################################################################
             ##########################################################################################################
 
-            ##########################################################################################################
+            ########################################################################################################## unicorn
             ##########################################################################################################
             if self.WatchdogTimerExpirationDurationSeconds > 0.0:
 
                 ##########################################################################################################
-                if self.CurrentTime_CalculatedFromMainThread - self.UDP_RxLastTimePacketWasReceived >= self.WatchdogTimerExpirationDurationSeconds:
-                    self.WatchdogTimerExpirationState = 1
-                else:
-                    self.WatchdogTimerExpirationState = 0
+                if self.UDP_RxOrTxRole == "rx": #No watchdog for tx
+
+                    self.TimeSinceWatchdogWasKicked = self.CurrentTime_CalculatedFromMainThread - self.UDP_RxLastTimePacketWasReceived
+
+                    if  self.TimeSinceWatchdogWasKicked >= self.WatchdogTimerExpirationDurationSeconds:
+                        self.WatchdogTimerExpirationState = 1
+                    else:
+                        self.WatchdogTimerExpirationState = 0
                 ##########################################################################################################
 
             else:
@@ -980,6 +1068,7 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             ##########################################################################################################
             ##########################################################################################################
             self.MostRecentDataDict["WatchdogTimerExpirationState"] = self.WatchdogTimerExpirationState
+            self.MostRecentDataDict["TimeSinceWatchdogWasKicked"] = self.TimeSinceWatchdogWasKicked
             ##########################################################################################################
             ##########################################################################################################
 
@@ -1123,22 +1212,14 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def StartGUI(self, GuiParent):
+    def CreateGUIobjects(self, TkinterParent):
 
-        self.GUI_Thread(GuiParent)
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def GUI_Thread(self, parent):
-
-        print("Starting the GUI_Thread for UDPdataExchanger_ReubenPython3Class object.")
+        print("UDPdataExchanger_ReubenPython3Class, CreateGUIobjects fired!")
 
         #################################################
         #################################################
-        self.root = parent
-        self.parent = parent
+        self.root = TkinterParent
+        self.parent = TkinterParent
         #################################################
         #################################################
 
@@ -1198,7 +1279,7 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #################################################
         #################################################
-        self.ToggleDataStreamOnOrOff_Button = Button(self.ButtonsFrame, text="Reset Peak", state="normal", width=15, command=lambda: self.ToggleDataStreamOnOrOff_Button_Response())
+        self.ToggleDataStreamOnOrOff_Button = Button(self.ButtonsFrame, text="ToggleDataStreamOnOrOff_Button", state="normal", width=15, command=lambda: self.ToggleDataStreamOnOrOff_Button_Response())
         self.ToggleDataStreamOnOrOff_Button.grid(row=0, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
         #################################################
         #################################################
@@ -1255,11 +1336,14 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                                                                                                     NumberOfDecimalsPlaceToUse = 5,
                                                                                                     NumberOfEntriesPerLine = 1,
                                                                                                     NumberOfTabsBetweenItems = 3)
+                    #######################################################
 
-                    if self.WatchdogTimerExpirationState == 0:
-                        self.Data_Label["bg"] = self.TKinter_LightGreenColor
-                    else:
-                        self.Data_Label["bg"] = self.TKinter_LightRedColor
+                    #######################################################
+                    if self.UDP_RxOrTxRole == "rx": #No watdhgo for tx
+                        if self.WatchdogTimerExpirationState == 0:
+                            self.Data_Label["bg"] = self.TKinter_LightGreenColor
+                        else:
+                            self.Data_Label["bg"] = self.TKinter_LightRedColor
                     #######################################################
 
                     #######################################################

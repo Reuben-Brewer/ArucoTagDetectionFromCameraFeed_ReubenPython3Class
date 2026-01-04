@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 02/02/2025
+Software Revision H, 01/02/2026
 
-Verified working on: Python 3.12 for Windows 11 64-bit.
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
+
+#######################################################################################################################
+#######################################################################################################################
+
+#########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
 
 #########################################################
 #https://github.com/Reuben-Brewer/ArucoTagDetectionFromCameraFeed_ReubenPython3Class
@@ -25,9 +33,6 @@ from LowPassFilterForDictsOfLists_ReubenPython2and3Class import *
 
 #https://github.com/Reuben-Brewer/MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class
 from MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class import *
-
-#https://github.com/Reuben-Brewer/MyPrint_ReubenPython2and3Class
-from MyPrint_ReubenPython2and3Class import *
 #########################################################
 
 #########################################################
@@ -40,9 +45,12 @@ import threading
 import collections
 import argparse
 import json
+import math
+import traceback
+import keyboard
 import numpy
 import cv2
-from circle_fitting_3d import Circle3D #pip install circle-fitting-3d
+from circle_fitting_3d import Circle3D #pip install circle-fitting-3d==1.0.0
 #########################################################
 
 #########################################################
@@ -61,23 +69,32 @@ if platform.system() == "Windows":
 
 #######################################################################################################################
 #######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
 global ParametersToBeLoaded_Directory_Windows
-ParametersToBeLoaded_Directory_Windows = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Windows = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_Windows
-LogFile_Directory_Windows = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_Windows = os.path.join(os.getcwd(), "Logs")
 
 global ParametersToBeLoaded_Directory_LinuxNonRaspberryPi
-ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_LinuxNonRaspberryPi
-LogFile_Directory_LinuxNonRaspberryPi = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_LinuxNonRaspberryPi = os.path.join(os.getcwd(), "Logs")
+
+global ParametersToBeLoaded_Directory_LinuxRaspberryPi
+ParametersToBeLoaded_Directory_LinuxRaspberryPi = "//home//pi//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//ParametersToBeLoaded"
+
+global LogFile_Directory_LinuxRaspberryPi
+LogFile_Directory_LinuxRaspberryPi = "//home//pi//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//Logs"
 
 global ParametersToBeLoaded_Directory_Mac
-ParametersToBeLoaded_Directory_Mac = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Mac = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_Mac
-LogFile_Directory_Mac = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_Mac = os.path.join(os.getcwd(), "Logs")
 #######################################################################################################################
 #######################################################################################################################
 
@@ -220,55 +237,410 @@ def IsTheTimeCurrentlyAM():
 
 #######################################################################################################################
 #######################################################################################################################
-def PassThrough0and1values_ExitProgramOtherwise(InputNameString, InputNumber):
+#######################################################################################################################
+#######################################################################################################################
+def ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(input, number_of_leading_numbers = 4, number_of_decimal_places = 3):
 
-    try:
-        InputNumber_ConvertedToFloat = float(InputNumber)
-    except:
-        exceptions = sys.exc_info()[0]
-        print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber for variable_name '" + InputNameString + "' must be a float value, Exceptions: %s" % exceptions)
-        input("Press any key to continue")
-        sys.exit()
+    number_of_decimal_places = max(1, number_of_decimal_places) #Make sure we're above 1
 
-    try:
-        if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-            return InputNumber_ConvertedToFloat
+    ListOfStringsToJoin = []
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    if isinstance(input, str) == 1:
+        ListOfStringsToJoin.append(input)
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    elif isinstance(input, int) == 1 or isinstance(input, float) == 1:
+        element = float(input)
+        prefix_string = "{:." + str(number_of_decimal_places) + "f}"
+        element_as_string = prefix_string.format(element)
+
+        ##########################################################################################################
+        ##########################################################################################################
+        if element >= 0:
+            element_as_string = element_as_string.zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1)  # +1 for sign, +1 for decimal place
+            element_as_string = "+" + element_as_string  # So that our strings always have either + or - signs to maintain the same string length
         else:
-            input("PassThrough0and1values_ExitProgramOtherwise Error. '" + InputNameString + "' must be 0 or 1 (value was " + str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-            sys.exit()
-    except:
-        exceptions = sys.exc_info()[0]
-        print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-        input("Press any key to continue")
-        sys.exit()
+            element_as_string = element_as_string.zfill(number_of_leading_numbers + number_of_decimal_places + 1 + 1 + 1)  # +1 for sign, +1 for decimal place
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ListOfStringsToJoin.append(element_as_string)
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    elif isinstance(input, list) == 1:
+
+        if len(input) > 0:
+            for element in input: #RECURSION
+                ListOfStringsToJoin.append(ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, number_of_leading_numbers, number_of_decimal_places))
+
+        else: #Situation when we get a list() or []
+            ListOfStringsToJoin.append(str(input))
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    elif isinstance(input, tuple) == 1:
+
+        if len(input) > 0:
+            for element in input: #RECURSION
+                ListOfStringsToJoin.append("TUPLE" + ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(element, number_of_leading_numbers, number_of_decimal_places))
+
+        else: #Situation when we get a list() or []
+            ListOfStringsToJoin.append(str(input))
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    elif isinstance(input, dict) == 1:
+
+        if len(input) > 0:
+            for Key in input: #RECURSION
+                ListOfStringsToJoin.append(str(Key) + ": " + ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(input[Key], number_of_leading_numbers, number_of_decimal_places))
+
+        else: #Situation when we get a dict()
+            ListOfStringsToJoin.append(str(input))
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    else:
+        ListOfStringsToJoin.append(str(input))
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    if len(ListOfStringsToJoin) > 1:
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        StringToReturn = ""
+        for Index, StringToProcess in enumerate(ListOfStringsToJoin):
+
+            ################################################
+            if Index == 0: #The first element
+                if StringToProcess.find(":") != -1 and StringToProcess[0] != "{": #meaning that we're processing a dict()
+                    StringToReturn = "{"
+                elif StringToProcess.find("TUPLE") != -1 and StringToProcess[0] != "(":  # meaning that we're processing a tuple
+                    StringToReturn = "("
+                else:
+                    StringToReturn = "["
+
+                StringToReturn = StringToReturn + StringToProcess.replace("TUPLE","") + ", "
+            ################################################
+
+            ################################################
+            elif Index < len(ListOfStringsToJoin) - 1: #The middle elements
+                StringToReturn = StringToReturn + StringToProcess + ", "
+            ################################################
+
+            ################################################
+            else: #The last element
+                StringToReturn = StringToReturn + StringToProcess
+
+                if StringToProcess.find(":") != -1 and StringToProcess[-1] != "}":  # meaning that we're processing a dict()
+                    StringToReturn = StringToReturn + "}"
+                elif StringToProcess.find("TUPLE") != -1 and StringToProcess[-1] != ")":  # meaning that we're processing a tuple
+                    StringToReturn = StringToReturn + ")"
+                else:
+                    StringToReturn = StringToReturn + "]"
+
+            ################################################
+
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    elif len(ListOfStringsToJoin) == 1:
+        StringToReturn = ListOfStringsToJoin[0]
+
+    else:
+        StringToReturn = ListOfStringsToJoin
+
+    return StringToReturn
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
 #######################################################################################################################
 #######################################################################################################################
+#######################################################################################################################
+#######################################################################################################################
 
 #######################################################################################################################
 #######################################################################################################################
-def PassThroughFloatValuesInRange_ExitProgramOtherwise(InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
+def ConvertDictToProperlyFormattedStringForPrinting(DictToPrint, NumberOfDecimalsPlaceToUse = 3, NumberOfEntriesPerLine = 1, NumberOfTabsBetweenItems = 3):
 
     try:
+        ProperlyFormattedStringForPrinting = ""
+        ItemsPerLineCounter = 0
+
+        for Key in DictToPrint:
+
+            if isinstance(DictToPrint[Key], dict): #RECURSION
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + \
+                                                     str(Key) + ":\n" + \
+                                                     ConvertDictToProperlyFormattedStringForPrinting(DictToPrint[Key], NumberOfDecimalsPlaceToUse, NumberOfEntriesPerLine, NumberOfTabsBetweenItems)
+
+            else:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + \
+                                                     str(Key) + ": " + \
+                                                     ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(DictToPrint[Key], 0, NumberOfDecimalsPlaceToUse)
+
+            if ItemsPerLineCounter < NumberOfEntriesPerLine - 1:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + "\t"*NumberOfTabsBetweenItems
+                ItemsPerLineCounter = ItemsPerLineCounter + 1
+            else:
+                ProperlyFormattedStringForPrinting = ProperlyFormattedStringForPrinting + "\n"
+                ItemsPerLineCounter = 0
+
+        return ProperlyFormattedStringForPrinting
+
+    except:
+        exceptions = sys.exc_info()[0]
+        print("ConvertDictToProperlyFormattedStringForPrinting, Exceptions: %s" % exceptions)
+        return ""
+        # traceback.print_exc()
+#######################################################################################################################
+#######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+def LimitNumber_FloatOutputOnly(min_val, max_val, test_val):
+    if test_val > max_val:
+        test_val = max_val
+
+    elif test_val < min_val:
+        test_val = min_val
+
+    else:
+        test_val = test_val
+
+    test_val = float(test_val)
+
+    return test_val
+#######################################################################################################################
+#######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+def LimitNumber_IntOutputOnly(min_val, max_val, test_val):
+    if test_val > max_val:
+        test_val = max_val
+
+    elif test_val < min_val:
+        test_val = min_val
+
+    else:
+        test_val = test_val
+
+    test_val = int(test_val)
+
+    return test_val
+#######################################################################################################################
+#######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+def TellWhichFileWereIn():
+    # We used to use this method, but it gave us the root calling file, not the class calling file
+    # absolute_file_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    # filename = absolute_file_path[absolute_file_path.rfind("\\") + 1:]
+
+    frame = inspect.stack()[1]
+    filename = frame[1][frame[1].rfind("\\") + 1:]
+    filename = filename.replace(".py", "")
+
+    return filename
+#######################################################################################################################
+#######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+#######################################################################################################################
+def PassThrough0and1values_ExitProgramOtherwise(InputNameString, InputNumber, ExitProgramIfFailureFlag = 0):
+
+    #######################################################################################################################
+    #######################################################################################################################
+    try:
+
+        #######################################################################################################################
         InputNumber_ConvertedToFloat = float(InputNumber)
-    except:
-        exceptions = sys.exc_info()[0]
-        print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-        input("Press any key to continue")
-        sys.exit()
+        #######################################################################################################################
 
-    try:
-        if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-            return InputNumber_ConvertedToFloat
-        else:
-            input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" + InputNameString + "' must be in the range [" + str(RangeMinValue) + ", " + str(RangeMaxValue) + "] (value was " + str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
+    except:
+
+        #######################################################################################################################
+        exceptions = sys.exc_info()[0]
+        print(TellWhichFileWereIn() + ", PassThrough0and1values_ExitProgramOtherwise Error. InputNumber '" + InputNameString + "' must be a numerical value, Exceptions: %s" % exceptions)
+
+        ##########################
+        if ExitProgramIfFailureFlag == 1:
             sys.exit()
-    except:
-        exceptions = sys.exc_info()[0]
-        print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-        input("Press any key to continue")
-        sys.exit()
+        else:
+            return -1
+        ##########################
 
+        #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+    try:
+
+        #######################################################################################################################
+        if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+            return InputNumber_ConvertedToFloat
+
+        else:
+
+            print(TellWhichFileWereIn() + ", PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                          str(InputNameString) +
+                          "' must be 0 or 1 (value was " +
+                          str(InputNumber_ConvertedToFloat) +
+                          "). Press any key (and enter) to exit.")
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+
+            else:
+                return -1
+            ##########################
+
+        #######################################################################################################################
+
+    except:
+
+        #######################################################################################################################
+        exceptions = sys.exc_info()[0]
+        print(TellWhichFileWereIn() + ", PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+
+        ##########################
+        if ExitProgramIfFailureFlag == 1:
+            sys.exit()
+        else:
+            return -1
+        ##########################
+
+        #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+#######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
+#######################################################################################################################
+def PassThroughFloatValuesInRange_ExitProgramOtherwise(InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag = 0):
+
+    #######################################################################################################################
+    #######################################################################################################################
+    try:
+        #######################################################################################################################
+        InputNumber_ConvertedToFloat = float(InputNumber)
+        #######################################################################################################################
+
+    except:
+        #######################################################################################################################
+        exceptions = sys.exc_info()[0]
+        print(TellWhichFileWereIn() + ", PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber '" + InputNameString + "' must be a float value, Exceptions: %s" % exceptions)
+        traceback.print_exc()
+
+        ##########################
+        if ExitProgramIfFailureFlag == 1:
+            sys.exit()
+        else:
+            return -11111.0
+        ##########################
+
+        #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+    try:
+
+        #######################################################################################################################
+        InputNumber_ConvertedToFloat_Limited = LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+        if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+            print(TellWhichFileWereIn() + ", PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                  str(InputNameString) +
+                  "' must be in the range [" +
+                  str(RangeMinValue) +
+                  ", " +
+                  str(RangeMaxValue) +
+                  "] (value was " +
+                  str(InputNumber_ConvertedToFloat) + ")")
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+        else:
+            return InputNumber_ConvertedToFloat_Limited
+        #######################################################################################################################
+
+    except:
+        #######################################################################################################################
+        exceptions = sys.exc_info()[0]
+        print(TellWhichFileWereIn() + ", PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+        traceback.print_exc()
+
+        ##########################
+        if ExitProgramIfFailureFlag == 1:
+            sys.exit()
+        else:
+            return -11111.0
+        ##########################
+
+        #######################################################################################################################
+
+    #######################################################################################################################
+    #######################################################################################################################
+
+#######################################################################################################################
 #######################################################################################################################
 #######################################################################################################################
 
@@ -435,37 +807,40 @@ def GUI_update_clock():
     global EXIT_PROGRAM_FLAG
     global GUI_RootAfterCallbackInterval_Milliseconds
     global USE_GUI_FLAG
+    global DebuggingInfo_Label
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+    global ArucoTag_Object
     global ArucoTag_OPEN_FLAG
     global SHOW_IN_GUI_ArucoTag_FLAG
 
-    global CSVdataLogger_ReubenPython3ClassObject
+    global CSVdataLogger_Object
     global CSVdataLogger_OPEN_FLAG
     global SHOW_IN_GUI_CSVdataLogger_FLAG
 
-    global MyPrint_ReubenPython2and3ClassObject
-    global MyPrint_OPEN_FLAG
-    global SHOW_IN_GUI_MyPrint_FLAG
+    global CircleCenterX
+    global CircleCenterY
+    global CircleRadius
 
     if USE_GUI_FLAG == 1:
+
         if EXIT_PROGRAM_FLAG == 0:
         #########################################################
         #########################################################
 
             #########################################################
+            DebuggingInfo_Label["text"]  = "CircleCenterX: " + ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(CircleCenterX, 0, 3) + \
+                                           "\nCircleCenterX: " + ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(CircleCenterY, 0, 3) + \
+                                           "\nCircleRadius: " + ConvertFloatToStringWithNumberOfLeadingNumbersAndDecimalPlaces_NumberOrListInput(CircleRadius, 0, 3)
+            #########################################################
+
+            #########################################################
             if ArucoTag_OPEN_FLAG == 1 and SHOW_IN_GUI_ArucoTag_FLAG == 1:
-                ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.GUI_update_clock()
+                ArucoTag_Object.GUI_update_clock()
             #########################################################
 
             #########################################################
             if CSVdataLogger_OPEN_FLAG == 1 and SHOW_IN_GUI_CSVdataLogger_FLAG == 1:
-                CSVdataLogger_ReubenPython3ClassObject.GUI_update_clock()
-            #########################################################
-
-            #########################################################
-            if MyPrint_OPEN_FLAG == 1 and SHOW_IN_GUI_MyPrint_FLAG == 1:
-                MyPrint_ReubenPython2and3ClassObject.GUI_update_clock()
+                CSVdataLogger_Object.GUI_update_clock()
             #########################################################
 
             root.after(GUI_RootAfterCallbackInterval_Milliseconds, GUI_update_clock)
@@ -475,23 +850,113 @@ def GUI_update_clock():
 ##########################################################################################################
 ##########################################################################################################
 
-#######################################################################################################################
-#######################################################################################################################
-def ExitProgram_Callback():
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+def ExitProgram_Callback(OptionalArugment = 0):
     global EXIT_PROGRAM_FLAG
-    global CSVdataLogger_ReubenPython3ClassObject
+
+    global CSVdataLogger_Object
     global CSVdataLogger_OPEN_FLAG
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+
+    global ArucoTag_Object
     global ArucoTag_OPEN_FLAG
 
-    print("ExitProgram_Callback event fired!")
+    try:
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        if CSVdataLogger_OPEN_FLAG == 1:
 
-    if (CSVdataLogger_OPEN_FLAG == 1 and CSVdataLogger_ReubenPython3ClassObject.IsSaving() == 0) and (ArucoTag_OPEN_FLAG == 1 and ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.IsSaving() == 0):
+            ##########################################################################################################
+            ##########################################################################################################
+            if CSVdataLogger_Object.IsSaving() == 0:
+
+                ##########################################################################################################
+                ##########################################################################################################
+                if ArucoTag_OPEN_FLAG == 1:
+
+                    ##########################################################################################################
+                    if ArucoTag_Object.IsSaving() == 0:
+                        print("ExitProgram_Callback event fired!")
+                        EXIT_PROGRAM_FLAG = 1
+                    ##########################################################################################################
+
+                    ##########################################################################################################
+                    else:
+                        print("ArucoTagDetectionFromCameraFeed is saving, cannot exit!")
+                        EXIT_PROGRAM_FLAG = 0
+                    ##########################################################################################################
+
+                ##########################################################################################################
+                ##########################################################################################################
+
+                ##########################################################################################################
+                ##########################################################################################################
+                else:
+                    print("ExitProgram_Callback event fired!")
+                    EXIT_PROGRAM_FLAG = 1
+                ##########################################################################################################
+                ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            else:
+                print("CSV is saving, cannot exit!")
+                EXIT_PROGRAM_FLAG = 0
+            ##########################################################################################################
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+        else:
+
+            ##########################################################################################################
+            ##########################################################################################################
+            if ArucoTag_OPEN_FLAG == 1:
+
+                ##########################################################################################################
+                if ArucoTag_Object.IsSaving() == 0:
+                    print("ExitProgram_Callback event fired!")
+                    EXIT_PROGRAM_FLAG = 1
+                ##########################################################################################################
+
+                ##########################################################################################################
+                else:
+                    print("ArucoTagDetectionFromCameraFeed is saving, cannot exit!")
+                    EXIT_PROGRAM_FLAG = 0
+                ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            else:
+                print("ExitProgram_Callback event fired!")
+                EXIT_PROGRAM_FLAG = 1
+            ##########################################################################################################
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        ##########################################################################################################
+    except:
         EXIT_PROGRAM_FLAG = 1
-    else:
-        print("ExitProgram_Callback, ERROR! Still saving data.")
-#######################################################################################################################
-#######################################################################################################################
+
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
 
 ##########################################################################################################
 ##########################################################################################################
@@ -516,9 +981,20 @@ def GUI_Thread():
     global TKinter_DefaultGrayColor
     global SHOW_IN_GUI_UR5arm_MostRecentDict_FLAG
 
+    global ArucoTag_Object
+    global ArucoTag_OPEN_FLAG
+
+    global CSVdataLogger_Object
+    global CSVdataLogger_OPEN_FLAG
+
     ########################################################### KEY GUI LINE
     ###########################################################
     root = Tk()
+
+    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
+    root.title(GUItitleString)
+    root.geometry('%dx%d+%d+%d' % (
+    root_width, root_height, root_Xpos, root_Ypos))  # set the dimensions of the screen and where it is placed
     ###########################################################
     ###########################################################
 
@@ -544,19 +1020,15 @@ def GUI_Thread():
     ############################################
     global TabControlObject
     global Tab_MainControls
-    global Tab_ArucoTagDetection
-    global Tab_MyPrint
+    global Tab_ArucoTag
 
     TabControlObject = ttk.Notebook(root)
 
-    Tab_ArucoTagDetection = ttk.Frame(TabControlObject)
-    TabControlObject.add(Tab_ArucoTagDetection, text='   ArucoTagDetection  ')
+    Tab_ArucoTag = ttk.Frame(TabControlObject)
+    TabControlObject.add(Tab_ArucoTag, text='   ArucoTag  ')
 
     Tab_MainControls = ttk.Frame(TabControlObject)
     TabControlObject.add(Tab_MainControls, text='   Main Controls   ')
-
-    Tab_MyPrint = ttk.Frame(TabControlObject)
-    TabControlObject.add(Tab_MyPrint, text='   MyPrint Terminal   ')
 
     TabControlObject.pack(expand=1, fill="both")  # CANNOT MIX PACK AND GRID IN THE SAME FRAME/TAB, SO ALL .GRID'S MUST BE CONTAINED WITHIN THEIR OWN FRAME/TAB.
 
@@ -568,32 +1040,50 @@ def GUI_Thread():
     #################################################
     #################################################
 
-    ############################################
-    ############################################
+    #################################################
+    #################################################
     global JSONfiles_NeedsToBeLoadedFlagButton
     JSONfiles_NeedsToBeLoadedFlagButton = Button(Tab_MainControls, text="Load JSON files", state="normal", width=GUIbuttonWidth, command=lambda i=1: JSONfiles_NeedsToBeLoadedFlag_ButtonResponse())
     JSONfiles_NeedsToBeLoadedFlagButton.grid(row=0, column=1, padx=GUIbuttonPadX, pady=GUIbuttonPadY, columnspan=1, rowspan=1,)
     JSONfiles_NeedsToBeLoadedFlagButton.config(font=("Helvetica", GUIbuttonFontSize))
-    ############################################
-    ############################################
+    #################################################
+    #################################################
 
-    ########################################################### THIS BLOCK MUST COME 2ND-TO-LAST IN def  GUI_Thread() IF USING TABS.
-    ###########################################################
-    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
-    root.title(GUItitleString)
+    #################################################
+    #################################################
+    global DebuggingInfo_Label
+    DebuggingInfo_Label = Label(Tab_MainControls, text="DebuggingInfo_Label", width=120, font=("Helvetica", 10))  #
+    DebuggingInfo_Label.grid(row=1, column=0, padx=GUIbuttonPadX, pady=GUIbuttonPadY, columnspan=10, rowspan=1)
+    #################################################
+    #################################################
+
+    #################################################
+    #################################################
+    if ArucoTag_OPEN_FLAG == 1:
+        ArucoTag_Object.CreateGUIobjects(TkinterParent=Tab_ArucoTag)
+    #################################################
+    #################################################
+
+    #################################################
+    #################################################
+    if CSVdataLogger_OPEN_FLAG == 1:
+        CSVdataLogger_Object.CreateGUIobjects(TkinterParent=Tab_MainControls)
+    #################################################
+    #################################################
+
+    ################################################# THIS BLOCK MUST COME 2ND-TO-LAST IN def  GUI_Thread() IF USING TABS.
+    #################################################
     root.after(GUI_RootAfterCallbackInterval_Milliseconds, GUI_update_clock)
-    root.geometry('%dx%d+%d+%d' % (
-    root_width, root_height, root_Xpos, root_Ypos))  # set the dimensions of the screen and where it is placed
     root.mainloop()
-    ###########################################################
-    ###########################################################
+    #################################################
+    #################################################
 
-    ###########################################################
-    ########################################################### THIS BLOCK MUST COME LAST IN def  GUI_Thread() REGARDLESS OF CODE.
+    ################################################# THIS BLOCK MUST COME LAST IN def  GUI_Thread() REGARDLESS OF CODE.
+    #################################################
     root.quit()  # Stop the GUI thread, MUST BE CALLED FROM GUI_Thread
     root.destroy()  # Close down the GUI thread, MUST BE CALLED FROM GUI_Thread
-    ###########################################################
-    ###########################################################
+    #################################################
+    #################################################
 
 ##########################################################################################################
 ##########################################################################################################
@@ -605,7 +1095,7 @@ def JSONfiles_NeedsToBeLoadedFlag_ButtonResponse():
 
     JSONfiles_NeedsToBeLoadedFlag = 1
 
-    MyPrint_ReubenPython2and3ClassObject.my_print("JSONfiles_NeedsToBeLoadedFlag_ButtonResponse event fired!")
+    print("JSONfiles_NeedsToBeLoadedFlag_ButtonResponse event fired!")
 #######################################################################################################################
 #######################################################################################################################
 
@@ -639,7 +1129,13 @@ def GetImageSizeAsHeightWidthNumberOfChannelsList(InputImageAsNumpyArray):
 
 ##########################################################################################################
 ##########################################################################################################
+##########################################################################################################
+##########################################################################################################
 if __name__ == '__main__':
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ################################################
     ################################################
@@ -719,7 +1215,7 @@ if __name__ == '__main__':
     global USE_ArucoTag_FLAG
     global USE_CSVdataLogger_FLAG
     global USE_MyPlotterPureTkinterStandAloneProcess_FLAG
-    global USE_MyPrint_FLAG
+    global USE_KEYBOARD_FLAG
     global USE_GUI_FLAG
 
     LoadAndParseJSONfile_UseClassesFlags()
@@ -730,7 +1226,6 @@ if __name__ == '__main__':
 
     global SHOW_IN_GUI_ArucoTag_FLAG
     global SHOW_IN_GUI_CSVdataLogger_FLAG
-    global SHOW_IN_GUI_MyPrint_FLAG
     global SHOW_IN_GUI_MyPlotterPureTkinterStandAloneProcess_FLAG
 
     global GUItitleString
@@ -744,12 +1239,12 @@ if __name__ == '__main__':
     global GUIbuttonPadY
     global GUIbuttonFontSize
 
-    global GUI_ROW_ArucoTagDetection
-    global GUI_COLUMN_ArucoTagDetection
-    global GUI_PADX_ArucoTagDetection
-    global GUI_PADY_ArucoTagDetection
-    global GUI_ROWSPAN_ArucoTagDetection
-    global GUI_COLUMNSPAN_ArucoTagDetection
+    global GUI_ROW_ArucoTag
+    global GUI_COLUMN_ArucoTag
+    global GUI_PADX_ArucoTag
+    global GUI_PADY_ArucoTag
+    global GUI_ROWSPAN_ArucoTag
+    global GUI_COLUMNSPAN_ArucoTag
 
     global GUI_ROW_CSVdataLogger
     global GUI_COLUMN_CSVdataLogger
@@ -757,13 +1252,6 @@ if __name__ == '__main__':
     global GUI_PADY_CSVdataLogger
     global GUI_ROWSPAN_CSVdataLogger
     global GUI_COLUMNSPAN_CSVdataLogger
-
-    global GUI_ROW_MyPrint
-    global GUI_COLUMN_MyPrint
-    global GUI_PADX_MyPrint
-    global GUI_PADY_MyPrint
-    global GUI_ROWSPAN_MyPrint
-    global GUI_COLUMNSPAN_MyPrint
 
     LoadAndParseJSONfile_GUIsettings()
     #################################################
@@ -828,8 +1316,8 @@ if __name__ == '__main__':
 
     #################################################
     global MyPlotterPureTkinterStandAloneProcess_Directions
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict
+    global MyPlotterPureTkinterStandAloneProcess_GUIparametersDict
+    global MyPlotterPureTkinterStandAloneProcess_SetupDict
     global MyPlotterPureTkinterStandAloneProcess_RefreshDurationInSeconds
 
     LoadAndParseJSONfile_MyPlotterPureTkinterStandAloneProcess()
@@ -844,8 +1332,7 @@ if __name__ == '__main__':
 
     global TabControlObject
     global Tab_MainControls
-    global Tab_ArucoTagDetection
-    global Tab_MyPrint
+    global Tab_ArucoTag
 
     global CurrentTime_MainLoopThread
     CurrentTime_MainLoopThread = -11111.0
@@ -877,23 +1364,20 @@ if __name__ == '__main__':
     global ArucoTag_DetectionTimeInMilliseconds_SecondaryMarker
     ArucoTag_DetectionTimeInMilliseconds_SecondaryMarker = -11111.0
 
-    global LineFromPrimaryMarkerToSecondaryMarker_NumpyArray
-    LineFromPrimaryMarkerToSecondaryMarker_NumpyArray = numpy.array([-11111.0]*3)
+    global CircleCenterX
+    CircleCenterX = 0.0
 
-    global LineFromPrimaryMarkerToSecondaryMarker_DistanceMM
-    LineFromPrimaryMarkerToSecondaryMarker_DistanceMM = -11111.0
+    global CircleCenterY
+    CircleCenterY = 0.0
 
-    global LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground
-    LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground = -11111.0
-
-    CircleCenterX = -11111
-    CircleCenterY = -11111
+    global CircleRadius
+    CircleRadius = 0.01
     #################################################
     #################################################
 
     #################################################
     #################################################
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+    global ArucoTag_Object
 
     global ArucoTag_OPEN_FLAG
     ArucoTag_OPEN_FLAG = -1
@@ -914,7 +1398,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global CSVdataLogger_ReubenPython3ClassObject
+    global CSVdataLogger_Object
 
     global CSVdataLogger_OPEN_FLAG
     CSVdataLogger_OPEN_FLAG = -1
@@ -929,16 +1413,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global MyPrint_ReubenPython2and3ClassObject
-
-    global MyPrint_OPEN_FLAG
-    MyPrint_OPEN_FLAG = -1
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject
+    global MyPlotterPureTkinterStandAloneProcess_Object
 
     global MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG
     MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = -1
@@ -946,321 +1421,315 @@ if __name__ == '__main__':
     global MyPlotterPureTkinter_MostRecentDict
     MyPlotterPureTkinter_MostRecentDict = dict()
 
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag = -1
+    global MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag
+    MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag = -1
 
     global LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess
     LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = -11111.0
     #################################################
     #################################################
 
-    #################################################  KEY GUI LINE
-    #################################################
-    if USE_GUI_FLAG == 1:
-        StartingTime_CalculatedFromGUIthread = getPreciseSecondsTimeStampString()
-        print("Starting GUI thread...")
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-        global GUI_Thread_ThreadingObject
-        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread)
-        GUI_Thread_ThreadingObject.setDaemon(True)  # Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        GUI_Thread_ThreadingObject.start()
-        time.sleep(0.5)  # Allow enough time for 'root' to be created that we can then pass it into other classes.
-    else:
-        root = None
-        Tab_MainControls = None
-        Tab_ArucoTagDetection = None
-        Tab_MyPrint = None
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ################################################
     ################################################
-    global CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict
-    CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict = dict([("MainThread_TimeToSleepEachLoop", 0.030),
-                                                                        ("NameToDisplay_UserSet", "Camera"),
-                                                                        ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
-                                                                        ("camera_selection_number", camera_selection_number),
-                                                                        ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
-                                                                        ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
-                                                                        ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
-                                                                        ("camera_frame_rate", camera_frame_rate),
-                                                                        ("image_width", image_width),
-                                                                        ("image_height", image_height),
-                                                                        ("image_jpg_encoding_quality", image_jpg_encoding_quality),
-                                                                        ("CameraSetting_Autofocus", CameraSetting_Autofocus),
-                                                                        ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
-                                                                        ("CameraSetting_exposure", CameraSetting_exposure),
-                                                                        ("CameraSetting_gain", CameraSetting_gain),
-                                                                        ("CameraSetting_brightness", CameraSetting_brightness),
-                                                                        ("CameraSetting_contrast", CameraSetting_contrast),
-                                                                        ("CameraSetting_saturation", CameraSetting_saturation),
-                                                                        ("CameraSetting_hue", CameraSetting_hue),
-                                                                        ("DrawCircleAtImageCenterFlag", DrawCircleAtImageCenterFlag),
-                                                                        ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
-                                                                        ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
-                                                                        ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
-                                                                        ("CameraCalibrationParametersDict", CameraCalibrationParametersDict),
-                                                                        ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
-                                                                        ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes),
-                                                                        ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix)])
+    global CameraStreamerClass_SetupDict
+    CameraStreamerClass_SetupDict = dict([("MainThread_TimeToSleepEachLoop", 0.030),
+                                        ("NameToDisplay_UserSet", "Camera"),
+                                        ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
+                                        ("camera_selection_number", camera_selection_number),
+                                        ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
+                                        ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
+                                        ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
+                                        ("camera_frame_rate", camera_frame_rate),
+                                        ("image_width", image_width),
+                                        ("image_height", image_height),
+                                        ("image_jpg_encoding_quality", image_jpg_encoding_quality),
+                                        ("CameraSetting_Autofocus", CameraSetting_Autofocus),
+                                        ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
+                                        ("CameraSetting_exposure", CameraSetting_exposure),
+                                        ("CameraSetting_gain", CameraSetting_gain),
+                                        ("CameraSetting_brightness", CameraSetting_brightness),
+                                        ("CameraSetting_contrast", CameraSetting_contrast),
+                                        ("CameraSetting_saturation", CameraSetting_saturation),
+                                        ("CameraSetting_hue", CameraSetting_hue),
+                                        ("DrawCircleAtImageCenterFlag", DrawCircleAtImageCenterFlag),
+                                        ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
+                                        ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
+                                        ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
+                                        ("CameraCalibrationParametersDict", CameraCalibrationParametersDict),
+                                        ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
+                                        ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes),
+                                        ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix)])
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict = dict([("USE_GUI_FLAG", 1),
-                                    ("root", Tab_ArucoTagDetection),
+    global ArucoTag_GUIparametersDict
+    ArucoTag_GUIparametersDict = dict([("USE_GUI_FLAG", 1),
                                     ("EnableInternal_MyPrint_Flag", 0),
                                     ("NumberOfPrintLines", 10),
                                     ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_ArucoTagDetection),
-                                    ("GUI_COLUMN", GUI_COLUMN_ArucoTagDetection),
-                                    ("GUI_PADX", GUI_PADX_ArucoTagDetection),
-                                    ("GUI_PADY", GUI_PADY_ArucoTagDetection),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_ArucoTagDetection),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_ArucoTagDetection)])
+                                    ("GUI_ROW", GUI_ROW_ArucoTag),
+                                    ("GUI_COLUMN", GUI_COLUMN_ArucoTag),
+                                    ("GUI_PADX", GUI_PADX_ArucoTag),
+                                    ("GUI_PADY", GUI_PADY_ArucoTag),
+                                    ("GUI_ROWSPAN", GUI_ROWSPAN_ArucoTag),
+                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_ArucoTag)])
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict = dict([("GUIparametersDict", ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict),
-                                                                ("CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict", CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict),
-                                                                ("NameToDisplay_UserSet", "ArucoTagDetectionFromCameraFeed"),
-                                                                ("ShowOpenCVwindowsFlag", ShowOpenCVwindowsFlag),
-                                                                ("OpenCVwindowPosX", OpenCVwindowPosX),
-                                                                ("OpenCVwindowPosY", OpenCVwindowPosY),
-                                                                ("OpenCVwindow_UpdateEveryNmilliseconds", OpenCVwindow_UpdateEveryNmilliseconds),
-                                                                ("MainThread_TimeToSleepEachLoop", test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class_MainThread_TimeToSleepEachLoop),
-                                                                ("ArucoTag_DictType_EnglishString", ArucoTag_DictType_EnglishString),
-                                                                ("ArucoTag_MarkerLengthInMillimeters", ArucoTag_MarkerLengthInMillimeters),
-                                                                ("ArucoTag_AxesToDrawLengthInMillimeters", ArucoTag_AxesToDrawLengthInMillimeters),
-                                                                ("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
-                                                                ("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
-                                                                ("TkinterPreviewImageScalingFactor", ArucoTag_TkinterPreviewImageScalingFactor),
-                                                                ("ArucoTag_SavedImages_LocalDirectoryNameNoSlashes", ArucoTag_SavedImages_LocalDirectoryNameNoSlashes),
-                                                                ("ArucoTag_SavedImages_FilenamePrefix", ArucoTag_SavedImages_FilenamePrefix),
-                                                                ("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag)])
+    global ArucoTag_SetupDict
+    ArucoTag_SetupDict = dict([("GUIparametersDict", ArucoTag_GUIparametersDict),
+                                ("CameraStreamerClass_SetupDict", CameraStreamerClass_SetupDict),
+                                ("NameToDisplay_UserSet", "ArucoTagDetectionFromCameraFeed"),
+                                ("ShowOpenCVwindowsFlag", ShowOpenCVwindowsFlag),
+                                ("OpenCVwindowPosX", OpenCVwindowPosX),
+                                ("OpenCVwindowPosY", OpenCVwindowPosY),
+                                ("OpenCVwindow_UpdateEveryNmilliseconds", OpenCVwindow_UpdateEveryNmilliseconds),
+                                ("MainThread_TimeToSleepEachLoop", test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class_MainThread_TimeToSleepEachLoop),
+                                ("ArucoTag_DictType_EnglishString", ArucoTag_DictType_EnglishString),
+                                ("ArucoTag_MarkerLengthInMillimeters", ArucoTag_MarkerLengthInMillimeters),
+                                ("ArucoTag_AxesToDrawLengthInMillimeters", ArucoTag_AxesToDrawLengthInMillimeters),
+                                ("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
+                                ("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
+                                ("TkinterPreviewImageScalingFactor", ArucoTag_TkinterPreviewImageScalingFactor),
+                                ("ArucoTag_SavedImages_LocalDirectoryNameNoSlashes", ArucoTag_SavedImages_LocalDirectoryNameNoSlashes),
+                                ("ArucoTag_SavedImages_FilenamePrefix", ArucoTag_SavedImages_FilenamePrefix),
+                                ("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag)])
 
 
     ###@@@
-    CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict["camera_selection_number"] = int(camera_selection_number)
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"] = CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict
+    CameraStreamerClass_SetupDict["camera_selection_number"] = int(camera_selection_number)
+    ArucoTag_SetupDict["CameraStreamerClass_SetupDict"] = CameraStreamerClass_SetupDict
     ###@@@
 
+    if USE_ArucoTag_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        try:
+            ArucoTag_Object = ArucoTagDetectionFromCameraFeed_ReubenPython3Class(ArucoTag_SetupDict)
+            ArucoTag_OPEN_FLAG = ArucoTag_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+        except:
+            exceptions = sys.exc_info()[0]
+            print("ArucoTag_Object __init__: Exceptions: %s" % exceptions)
+            traceback.print_exc()
+    #################################################
+    #################################################
+
+    #################################################
+    #################################################
     if USE_ArucoTag_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if ArucoTag_OPEN_FLAG != 1:
+                print("Failed to open ArucoTag_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    #################################################
+    #################################################
+    global CSVdataLogger_GUIparametersDict
+    CSVdataLogger_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CSVdataLogger_FLAG),
+                                            ("EnableInternal_MyPrint_Flag", 1),
+                                            ("NumberOfPrintLines", 10),
+                                            ("UseBorderAroundThisGuiObjectFlag", 0),
+                                            ("GUI_ROW", GUI_ROW_CSVdataLogger),
+                                            ("GUI_COLUMN", GUI_COLUMN_CSVdataLogger),
+                                            ("GUI_PADX", GUI_PADX_CSVdataLogger),
+                                            ("GUI_PADY", GUI_PADY_CSVdataLogger),
+                                            ("GUI_ROWSPAN", GUI_ROWSPAN_CSVdataLogger),
+                                            ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CSVdataLogger)])
+
+    global CSVdataLogger_SetupDict
+    CSVdataLogger_SetupDict = dict([("GUIparametersDict", CSVdataLogger_GUIparametersDict),
+                                    ("NameToDisplay_UserSet", "CSVdataLogger"),
+                                    ("CSVfile_DirectoryPath", os.path.join(os.getcwd(), "SavedCSVfiles")),
+                                    ("FileNamePrefix", "Aruco_"),
+                                    ("VariableNamesForHeaderList", ["Time",
+                                                                    "CircleCenterX",
+                                                                    "CircleCenterY",
+                                                                    "CircleRadius"]),
+                                    ("MainThread_TimeToSleepEachLoop", 0.002),
+                                    ("SaveOnStartupFlag", 0)])
+
+    if USE_CSVdataLogger_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
-            ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject = ArucoTagDetectionFromCameraFeed_ReubenPython3Class(ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict)
-            ArucoTag_OPEN_FLAG = ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            CSVdataLogger_Object = CSVdataLogger_ReubenPython3Class(CSVdataLogger_SetupDict)
+            CSVdataLogger_OPEN_FLAG = CSVdataLogger_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
         except:
             exceptions = sys.exc_info()[0]
-            print("ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject __init__: Exceptions: %s" % exceptions)
+            print("CSVdataLogger_Object __init__: Exceptions: %s" % exceptions)
             traceback.print_exc()
     #################################################
     #################################################
 
     #################################################
     #################################################
-    global CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict
-    CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CSVdataLogger_FLAG),
-                                    ("root", Tab_MainControls),
-                                    ("EnableInternal_MyPrint_Flag", 1),
-                                    ("NumberOfPrintLines", 10),
-                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_CSVdataLogger),
-                                    ("GUI_COLUMN", GUI_COLUMN_CSVdataLogger),
-                                    ("GUI_PADX", GUI_PADX_CSVdataLogger),
-                                    ("GUI_PADY", GUI_PADY_CSVdataLogger),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_CSVdataLogger),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CSVdataLogger)])
-
-    global CSVdataLogger_ReubenPython3ClassObject_setup_dict
-    CSVdataLogger_ReubenPython3ClassObject_setup_dict = dict([("GUIparametersDict", CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict),
-                                                                                ("NameToDisplay_UserSet", "CSVdataLogger"),
-                                                                                ("CSVfile_DirectoryPath", "G:\\My Drive\\CodeReuben\\ArucoTagDetectionFromCameraFeed_ReubenPython3Class\\SavedCSVfiles"),
-                                                                                ("FileNamePrefix", "Aruco_"),
-                                                                                ("VariableNamesForHeaderList", ["Time",
-                                                                                                                "X0",
-                                                                                                                "Y0",
-                                                                                                                "Z0",
-                                                                                                                "X1",
-                                                                                                                "Y1",
-                                                                                                                "Z1",
-                                                                                                                "LineFromPrimaryMarkerToSecondaryMarker_DistanceMM",
-                                                                                                                "LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground"]),
-                                                                                ("MainThread_TimeToSleepEachLoop", 0.002),
-                                                                                ("SaveOnStartupFlag", 0)])
-
     if USE_CSVdataLogger_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if CSVdataLogger_OPEN_FLAG != 1:
+                print("Failed to open CSVdataLogger_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    #################################################
+    #################################################
+    MyPlotterPureTkinterStandAloneProcess_SetupDict["GUIparametersDict"] = MyPlotterPureTkinterStandAloneProcess_GUIparametersDict
+    MyPlotterPureTkinterStandAloneProcess_SetupDict["SavePlot_DirectoryPath"] = os.path.join(os.getcwd(), "SavedImagesFolder")
+
+    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
-            CSVdataLogger_ReubenPython3ClassObject = CSVdataLogger_ReubenPython3Class(CSVdataLogger_ReubenPython3ClassObject_setup_dict)
-            CSVdataLogger_OPEN_FLAG = CSVdataLogger_ReubenPython3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            MyPlotterPureTkinterStandAloneProcess_Object = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(MyPlotterPureTkinterStandAloneProcess_SetupDict)
+            MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = MyPlotterPureTkinterStandAloneProcess_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
         except:
             exceptions = sys.exc_info()[0]
-            print("CSVdataLogger_ReubenPython3ClassObject __init__: Exceptions: %s" % exceptions)
+            print("MyPlotterPureTkinterStandAloneProcess_Object, exceptions: %s" % exceptions)
             traceback.print_exc()
     #################################################
     #################################################
 
     #################################################
     #################################################
-    if USE_MyPrint_FLAG == 1:
-
-        MyPrint_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
-                                                                        ("root", Tab_MyPrint),
-                                                                        ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                        ("GUI_ROW", GUI_ROW_MyPrint),
-                                                                        ("GUI_COLUMN", GUI_COLUMN_MyPrint),
-                                                                        ("GUI_PADX", GUI_PADX_MyPrint),
-                                                                        ("GUI_PADY", GUI_PADY_MyPrint),
-                                                                        ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
-                                                                        ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
-
-        MyPrint_ReubenPython2and3ClassObject_setup_dict = dict([("NumberOfPrintLines", 10),
-                                                                ("WidthOfPrintingLabel", 200),
-                                                                ("PrintToConsoleFlag", 1),
-                                                                ("LogFileNameFullPath", os.getcwd() + "//TestLog.txt"),
-                                                                ("GUIparametersDict", MyPrint_ReubenPython2and3ClassObject_GUIparametersDict)])
-
-        try:
-            MyPrint_ReubenPython2and3ClassObject = MyPrint_ReubenPython2and3Class(MyPrint_ReubenPython2and3ClassObject_setup_dict)
-            time.sleep(0.25)
-            MyPrint_OPEN_FLAG = MyPrint_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("MyPrint_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict = dict([("EnableInternal_MyPrint_Flag", 1),
-                                                                                                ("NumberOfPrintLines", 10),
-                                                                                                ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                                                ("GraphCanvasWidth", 890),
-                                                                                                ("GraphCanvasHeight", 700),
-                                                                                                ("GraphCanvasWindowStartingX", 0),
-                                                                                                ("GraphCanvasWindowStartingY", 0),
-                                                                                                ("GUI_RootAfterCallbackInterval_Milliseconds_IndependentOfParentRootGUIloopEvents", 20)])
-
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict = dict([("GUIparametersDict", MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict),
-                                                                                        ("ParentPID", os.getpid()),
-                                                                                        ("WatchdogTimerExpirationDurationSeconds_StandAlonePlottingProcess", 5.0),
-                                                                                        ("MarkerSize", 3),
-                                                                                        ("CurvesToPlotNamesAndColorsDictOfLists", dict([("NameList", ["Channel0", "Channel1", "Channel2"]),("ColorList", ["Red", "Green", "Blue"])])),
-                                                                                        ("NumberOfDataPointToPlot", 50),
-                                                                                        ("XaxisNumberOfTickMarks", 10),
-                                                                                        ("YaxisNumberOfTickMarks", 10),
-                                                                                        ("XaxisNumberOfDecimalPlacesForLabels", 3),
-                                                                                        ("YaxisNumberOfDecimalPlacesForLabels", 3),
-                                                                                        ("XaxisAutoscaleFlag", 1),
-                                                                                        ("YaxisAutoscaleFlag", 1),
-                                                                                        ("X_min", 0.0),
-                                                                                        ("X_max", 20.0),
-                                                                                        ("Y_min", -0.0015),
-                                                                                        ("Y_max", 0.0015),
-                                                                                        ("XaxisDrawnAtBottomOfGraph", 0),
-                                                                                        ("XaxisLabelString", "Time (sec)"),
-                                                                                        ("YaxisLabelString", "Y-units (units)"),
-                                                                                        ("ShowLegendFlag", 1)])
-
     if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1:
-        try:
-            MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict)
-            MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+        if EXIT_PROGRAM_FLAG == 0:
+            if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
+                print("Failed to open MyPlotterPureTkinterStandAloneProcess_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
 
-        except:
-            exceptions = sys.exc_info()[0]
-            print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject, exceptions: %s" % exceptions)
-            traceback.print_exc()
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ####################################################
     ####################################################
     try:
 
-        DictOfVariableFilterSettings = dict([("CircleCenterX", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])), #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
-                                             ("CircleCenterY", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])),
-                                             ("CircleRadius",  dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)]))])
+        LowPassFilterForDictsOfLists_DictOfVariableFilterSettings = dict([("CircleCenterX", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])), #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
+                                                                         ("CircleCenterY", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])),
+                                                                         ("CircleRadius",  dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)]))])
 
-        #LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict = dict([("DictOfVariableFilterSettings", DictOfVariableFilterSettings)])
-        LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict = dict()
+        LowPassFilterForDictsOfLists_SetupDict = dict([("DictOfVariableFilterSettings", LowPassFilterForDictsOfLists_DictOfVariableFilterSettings)])
 
-        LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject = LowPassFilterForDictsOfLists_ReubenPython2and3Class(LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_setup_dict)
-        LOWPASSFILTER_OPEN_FLAG = LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-        LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.AddDictOfVariableFilterSettingsFromExternalProgram(DictOfVariableFilterSettings)
+        LowPassFilterForDictsOfLists_Object = LowPassFilterForDictsOfLists_ReubenPython2and3Class(LowPassFilterForDictsOfLists_SetupDict)
+        LowPassFilter_OPEN_FLAG = LowPassFilterForDictsOfLists_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
     except:
         exceptions = sys.exc_info()[0]
         print("LowPassFilterForDictsOfLists_ReubenPython2and3Class __init__: Exceptions: %s" % exceptions)
-####################################################
+        traceback.print_exc()
+    ####################################################
     ####################################################
 
-    #################################################
-    #################################################
-    if USE_ArucoTag_FLAG == 1 and ArucoTag_OPEN_FLAG != 1:
-        print("Failed to open ArucoTagDetectionFromCameraFeed_ReubenPython3Class.")
-        ExitProgram_Callback()
-    #################################################
-    #################################################
+    ####################################################
+    ####################################################
+    if 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if LowPassFilter_OPEN_FLAG != 1:
+                print("Failed to open MyPlotterPureTkinterStandAloneProcess_Object.")
+                ExitProgram_Callback()
+    ####################################################
+    ####################################################
 
-    #################################################
-    #################################################
-    if USE_CSVdataLogger_FLAG == 1 and CSVdataLogger_OPEN_FLAG != 1:
-        print("Failed to open CSVdataLogger_ReubenPython3Class.")
-        ExitProgram_Callback()
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################
-    #################################################
-    if USE_MyPrint_FLAG == 1 and MyPrint_OPEN_FLAG != 1:
-        print("Failed to open MyPrint_ReubenPython2and3ClassObject.")
-        ExitProgram_Callback()
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    if USE_KEYBOARD_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        keyboard.on_press_key("esc", ExitProgram_Callback)
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################
-    #################################################
-    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
-        print("Failed to open MyPlotterPureTkinterClass_Object.")
-        ExitProgram_Callback()
-    #################################################
-    #################################################
+    ########################################################################################################## KEY GUI LINE
+    ##########################################################################################################
+    ##########################################################################################################
+    print("USE_GUI_FLAG: " + str(USE_GUI_FLAG))
 
-    #################################################
-    #################################################
-    #################################################
-    #################################################
+    if USE_GUI_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        print("Starting GUI thread...")
+        StartingTime_CalculatedFromGUIthread = getPreciseSecondsTimeStampString()
+        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread, daemon=True) #Daemon=True means that the GUI thread is destroyed automatically when the main thread is destroyed
+        GUI_Thread_ThreadingObject.start()
+    else:
+        root = None
+        Tab_MainControls = None
+        Tab_ArucoTag = None
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
     print("Starting main loop 'test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class.py.")
     StartingTime_MainLoopThread = getPreciseSecondsTimeStampString()
 
     while(EXIT_PROGRAM_FLAG == 0):
 
-        #################################################
-        #################################################
-        #################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
         CurrentTime_MainLoopThread = getPreciseSecondsTimeStampString() - StartingTime_MainLoopThread
-        #################################################
-        #################################################
-        #################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
 
         ################################################### GET's
+        ###################################################
+        ###################################################
+        ###################################################
         ###################################################
         if JSONfiles_NeedsToBeLoadedFlag == 1:
             LoadAndParseJSONfile_GUIsettings()
 
             ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
             LoadAndParseJSONfile_ArucoTagParameters()
 
-            DictOfVariableFilterSettings = dict([("CircleCenterX", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])), #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
-                                     ("CircleCenterY", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])),
-                                     ("CircleRadius",  dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)]))])
+            LowPassFilterForDictsOfLists_DictOfVariableFilterSettings = dict([("CircleCenterX", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])), #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
+                                                                             ("CircleCenterY", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)])),
+                                                                             ("CircleRadius",  dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)]))])
 
-            print(ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)
-            LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.AddDictOfVariableFilterSettingsFromExternalProgram(DictOfVariableFilterSettings)
+            #print(ArucoTag_CircleDetection_ExponentialSmoothingFilterLambda)
+            LowPassFilterForDictsOfLists_Object.AddDictOfVariableFilterSettingsFromExternalProgram(LowPassFilterForDictsOfLists_DictOfVariableFilterSettings)
+            ###################################################
+            ###################################################
+            ###################################################
             ###################################################
 
             '''
@@ -1272,20 +1741,29 @@ if __name__ == '__main__':
             JSONfiles_NeedsToBeLoadedFlag = 0
         ###################################################
         ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
 
-        #################################################
-        #################################################
-        #################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
         if USE_ArucoTag_FLAG == 1:
 
-            ################################################# GET's
-            #################################################
-            ArucoTag_MostRecentDict = ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.GetMostRecentDataDict()
+            ################################################### GET's
+            ###################################################
+            ###################################################
+            ###################################################
+            ArucoTag_MostRecentDict = ArucoTag_Object.GetMostRecentDataDict()
             #print("ArucoTag_MostRecentDict: " + str(ArucoTag_MostRecentDict))
 
             if "Time" in ArucoTag_MostRecentDict:
 
-                #################################################
+                ###################################################
+                ###################################################
+                ###################################################
                 ArucoTag_MostRecentDict_DataStreamingFrequency_CalculatedFromMainThread = ArucoTag_MostRecentDict["Frequency"]
                 ArucoTag_MostRecentDict_Time = ArucoTag_MostRecentDict["Time"]
                 ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict = ArucoTag_MostRecentDict["DetectedArucoTag_InfoDict"]
@@ -1296,14 +1774,19 @@ if __name__ == '__main__':
                 ArucoTag_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients = ArucoTag_MostRecentDict["CameraCalibration_Darray_DistortionCoefficients"]
 
                 [Height, Width, NumberOfChannels] = GetImageSizeAsHeightWidthNumberOfChannelsList(ArucoTag_MostRecentDict_CameraImage_Color_ArucoDetected)
-                #################################################
+                ###################################################
+                ###################################################
+                ###################################################
 
-                #################################################
+                ###################################################
+                ###################################################
+                ###################################################
                 MarkerCentersInEuclideanSpaceList = list()
                 MarkersRotationVectorOfMarkerCenter_RodriguesAxisAngleList = list()
                 MarkerDetectionTimeInMillisecondsList = list()
                 MarkerCornersList = list()
                 CenterOfMarkersInImageCoordinatesList = list()
+
                 for Index in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict:
                     InfoDict = ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict[Index]
 
@@ -1321,7 +1804,13 @@ if __name__ == '__main__':
                         #Plot middle of marker
                         #cv2.circle(ArucoTag_MostRecentDict_CameraImage_Color_ArucoDetected, (round(CenterOfMarker[0]), round(CenterOfMarker[1])), radius=10, color=(255, 0, 0), thickness=-1) #thickness=-1 means it's filled-in
 
-                #################################################
+                ###################################################
+                ###################################################
+                ###################################################
+
+                ###################################################
+                ###################################################
+                ###################################################
 
                 #print("CenterOfMarkersInImageCoordinatesList: " + str(CenterOfMarkersInImageCoordinatesList))
 
@@ -1335,128 +1824,159 @@ if __name__ == '__main__':
                 #print("CenterOfMarkersInImageCoordinatesList_NumpyMean: " + str(CenterOfMarkersInImageCoordinatesList_NumpyMean))
 
                 if len(CenterOfMarkersInImageCoordinatesList) >= 3:
-                    #################################################
+
+                    ###################################################
+                    ###################################################
                     #circle_3d = Circle3D(numpy.array(MarkerCentersInEuclideanSpaceList)) #If using Euclidean space
                     circle_3d = Circle3D(numpy.array(CenterOfMarkersInImageCoordinatesList))
+                    #print("(circle_3d: " + str(circle_3d.center) + ", Radius = " + str(circle_3d.radius))
 
 
                     #CircleCenterZ = round(circle_3d.center[2])
                     #CircleRadius = round(circle_3d.radius)
 
-                    #print("(circle_3d: " + str(circle_3d.center) + ", Radius = " + str(circle_3d.radius))
                     CircleCenterX_raw = round(circle_3d.center[0])
                     CircleCenterY_raw = round(circle_3d.center[1])
                     CircleRadius_raw = round(circle_3d.radius)
-                    LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_MostRecentDict = LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject.AddDataDictFromExternalProgram(dict([("CircleCenterX", CircleCenterX_raw),
-                                                                                                                            ("CircleCenterY", CircleCenterY_raw),
-                                                                                                                            ("CircleRadius", CircleRadius_raw)]))
-                    #Raw_1 = LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_MostRecentDict["desired_angle_deg_1"]["Raw_MostRecentValuesList"]
-                    CircleCenterX = round(LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_MostRecentDict["CircleCenterX"]["Filtered_MostRecentValuesList"][0])
-                    CircleCenterY = round(LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_MostRecentDict["CircleCenterY"]["Filtered_MostRecentValuesList"][0])
-                    CircleRadius = round(LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject_MostRecentDict["CircleRadius"]["Filtered_MostRecentValuesList"][0])
-                    #################################################
+                    #print("CircleCenterX_raw: " + str(CircleCenterX_raw) +
+                    #      ", CircleCenterY_raw: " + str(CircleCenterY_raw) +
+                    #      ", CircleRadius_raw: " + str(CircleRadius_raw))
 
+                    LowPassFilterForDictsOfLists_MostRecentDict = LowPassFilterForDictsOfLists_Object.AddDataDictFromExternalProgram(dict([("CircleCenterX", CircleCenterX_raw),
+                                                                                                                                            ("CircleCenterY", CircleCenterY_raw),
+                                                                                                                                            ("CircleRadius", CircleRadius_raw)]))
+                    #print("LowPassFilterForDictsOfLists_MostRecentDict: " + str(LowPassFilterForDictsOfLists_MostRecentDict))
 
-                    #################################################
+                    if "CircleCenterX" in LowPassFilterForDictsOfLists_MostRecentDict:
+                        CircleCenterX = round(LowPassFilterForDictsOfLists_MostRecentDict["CircleCenterX"]["Filtered_MostRecentValuesList"][0])
+                        CircleCenterY = round(LowPassFilterForDictsOfLists_MostRecentDict["CircleCenterY"]["Filtered_MostRecentValuesList"][0])
+                        CircleRadius = round(LowPassFilterForDictsOfLists_MostRecentDict["CircleRadius"]["Filtered_MostRecentValuesList"][0])
+                    ###################################################
+                    ###################################################
 
-
-                    TransformedPoints, jacobian = cv2.projectPoints(objectPoints=numpy.array([circle_3d.center]), \
-                                        tvec=numpy.array([0.0, 0.0, 0.0]), \
-                                        rvec=numpy.array([0.0, 0.0, 0.0]), \
-                                        cameraMatrix=ArucoTag_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix, \
-                                        distCoeffs=ArucoTag_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
+                    ###################################################
+                    ###################################################
+                    TransformedPoints, jacobian = cv2.projectPoints(objectPoints=numpy.array([circle_3d.center]),
+                                                                    tvec=numpy.array([0.0, 0.0, 0.0]),
+                                                                    rvec=numpy.array([0.0, 0.0, 0.0]),
+                                                                    cameraMatrix=ArucoTag_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                                    distCoeffs=ArucoTag_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
 
                     #CircleCenterX = round(TransformedPoints[0][0][0])
                     #CircleCenterY = round(TransformedPoints[0][0][1])
-
-
 
                     #CircleCenterX = round(Width/2.0)
                     #CircleCenterY = round(Height/2.0)
                     #CircleRadius = round(Height/2.0)
 
                     #print("TransformedPoints: " + str(TransformedPoints[0][0]))
+                    ###################################################
+                    ###################################################
+
+                ###################################################
+                ###################################################
+                ###################################################
+
+                ###################################################
+                ###################################################
+                ###################################################
                 if CircleCenterX != -11111:
                     overlay = ArucoTag_MostRecentDict_CameraImage_Color_ArucoDetected.copy()
-                    cv2.circle(overlay, (CircleCenterX, CircleCenterY), radius=CircleRadius, color=(0, 0, 255), thickness=-1) #thickness=-1 means it's filled-in
 
+                    ###################################################
+                    try:
+                        cv2.circle(overlay, (int(CircleCenterX), int(CircleCenterY)), radius=int(CircleRadius), color=(0, 0, 255), thickness=-1) #thickness=-1 means it's filled-in
+
+                    except:
+                        exceptions = sys.exc_info()[0]
+                        print("#1. cv2.circle(overlay... Exceptions: %s" % exceptions)
+                    ###################################################
+
+
+                    ################################################### Following line overlays transparent rectangle over the image
                     alpha = 0.4  # Transparency factor.
-
-                    # Following line overlays transparent rectangle
-                    # over the image
                     image_new = cv2.addWeighted(overlay, alpha, ArucoTag_MostRecentDict_CameraImage_Color_ArucoDetected, 1 - alpha, 0)
-                    cv2.circle(image_new, (CircleCenterX, CircleCenterY), radius=round(CircleRadius*0.1), color=(0, 0, 255), thickness=-1) #thickness=-1 means it's filled-in
 
+                    try:
+                        cv2.circle(image_new, (int(CircleCenterX), int(CircleCenterY)), radius=int(round(CircleRadius*0.1)), color=(0, 255, 0), thickness=-1) #thickness=-1 means it's filled-in
+
+                    except:
+                        exceptions = sys.exc_info()[0]
+                        print("#2. cv2.circle(overlay... Exceptions: %s" % exceptions)
                     #################################################
 
-                #################################################
+                ###################################################
+                ###################################################
+                ###################################################
+
+                ###################################################
+                ###################################################
+                ###################################################
                     cv2.imshow('ArucoTag_MostRecentDict_CameraImage_Color_ArucoDetected', image_new)
                     cv2.waitKey(1)
+                ###################################################
+                ###################################################
+                ###################################################
 
-                #################################################
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
 
-
-
-            #################################################
-            #################################################
-
-            ################################################# SET's
-            #################################################
-
-            #################################################
-            #################################################
-
-            ################################################# SET's
-            #################################################
+            ################################################### SET's
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
             if CSVdataLogger_OPEN_FLAG == 1:
+                CSVdataLogger_Object.AddDataToCSVfile_ExternalFunctionCall([CurrentTime_MainLoopThread,
+                                                                            CircleRadius,
+                                                                            CircleCenterX,
+                                                                            CircleCenterY,
+                                                                            CircleRadius])
 
-                if ArucoTag_MarkerIDToDetect_PrimaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict and ArucoTag_MarkerIDToDetect_SecondaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict:
-                    if 1:
-                        CSVdataLogger_ReubenPython3ClassObject.AddDataToCSVfile_ExternalFunctionCall([ArucoTag_MostRecentDict_Time])
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
 
-            #################################################
-            #################################################
-
-            #################################################
-            #################################################
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
+            ###################################################
             if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG == 1:
 
-                #################################################
-                MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.GetMostRecentDataDict()
+                ###################################################
+                MyPlotterPureTkinterStandAloneProcess_MostRecentDict = MyPlotterPureTkinterStandAloneProcess_Object.GetMostRecentDataDict()
 
-                if "StandAlonePlottingProcess_ReadyForWritingFlag" in MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict:
-                    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict["StandAlonePlottingProcess_ReadyForWritingFlag"]
+                if "StandAlonePlottingProcess_ReadyForWritingFlag" in MyPlotterPureTkinterStandAloneProcess_MostRecentDict:
+                    MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag = MyPlotterPureTkinterStandAloneProcess_MostRecentDict["StandAlonePlottingProcess_ReadyForWritingFlag"]
 
-                    if MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag == 1:
-                        if CurrentTime_MainLoopThread - LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess >= MyPlotterPureTkinterStandAloneProcess_RefreshDurationInSeconds:
+                    if MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag == 1:
+                        if CurrentTime_MainLoopThread - LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess >= MyPlotterPureTkinterStandAloneProcess_RefreshDurationInSeconds + 0.001:
 
-                            if ArucoTag_MarkerIDToDetect_PrimaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict and ArucoTag_MarkerIDToDetect_SecondaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict:
-                                if 1:#(LineFromPrimaryMarkerToSecondaryMarker_DistanceMM < ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker + ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold) and (LineFromPrimaryMarkerToSecondaryMarker_DistanceMM > ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker - ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold):
+                            MyPlotterPureTkinterStandAloneProcess_Object.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1"], [CurrentTime_MainLoopThread]*2, [CircleCenterY, CircleCenterX])
 
-                                    #MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1"], [CurrentTime_MainLoopThread]*2, ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[0:2])
-                                    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1"], [CurrentTime_MainLoopThread]*2, [LineFromPrimaryMarkerToSecondaryMarker_DistanceMM, LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground])
+                            LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = CurrentTime_MainLoopThread
+                ###################################################
 
-
-                                    LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = CurrentTime_MainLoopThread
-                #################################################
-
-            ####################################################
-            ####################################################
-
-        #################################################
-        #################################################
-        #################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
+        ###################################################
 
         time.sleep(0.030)
-    #################################################
-    #################################################
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    ################################################# THIS IS THE EXIT ROUTINE!
-    #################################################
-    #################################################
-    #################################################
+    ########################################################################################################## THIS IS THE EXIT ROUTINE!
+    ##########################################################################################################
+    ##########################################################################################################
     print("Exiting main program 'test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class.py.")
 
     #################################################
@@ -1465,28 +1985,24 @@ if __name__ == '__main__':
 
     #################################################
     if ArucoTag_OPEN_FLAG == 1:
-        ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.ExitProgram_Callback()
+        ArucoTag_Object.ExitProgram_Callback()
     #################################################
 
     #################################################
     if CSVdataLogger_OPEN_FLAG == 1:
-        CSVdataLogger_ReubenPython3ClassObject.ExitProgram_Callback()
-    #################################################
-
-    #################################################
-    if MyPrint_OPEN_FLAG == 1:
-        MyPrint_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        CSVdataLogger_Object.ExitProgram_Callback()
     #################################################
 
     #################################################
     if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG == 1:
-        MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        MyPlotterPureTkinterStandAloneProcess_Object.ExitProgram_Callback()
     #################################################
 
-    #################################################
-    #################################################
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
+##########################################################################################################
+##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################

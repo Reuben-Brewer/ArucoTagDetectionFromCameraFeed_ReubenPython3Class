@@ -1,17 +1,23 @@
+# -*- coding: utf-8 -*-
+
 '''
 Reuben Brewer, Ph.D.
 reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 02/02/2025
+Software Revision H, 01/02/2026
 
-Verified working on: Python 3.12 for Windows 10 64-bit.
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
+__author__ = 'reuben.brewer'
+
+############################################
 import math
 
 from fpdf import FPDF #pip install fpdf2, https://pyfpdf.readthedocs.io/en/latest/reference/image/index.html
+############################################
 
 USE_RECTILINEAR_GRID_FLAG = 1
 

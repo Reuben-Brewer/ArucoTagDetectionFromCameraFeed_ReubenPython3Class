@@ -6,12 +6,15 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision H, 02/02/2025
+Software Revision I, 12/27/2025
 
-Verified working on: Python 2.7, 3.12 for Windows 11 64-bit and Raspberry Pi Buster.
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit and Raspberry Pi Bookworm.
 '''
 
 __author__ = 'reuben.brewer'
+
+##########################################################################################################
+##########################################################################################################
 
 #########################################################
 import os
@@ -23,11 +26,11 @@ import traceback
 #########################################################
 
 #########################################################
-if sys.version_info[0] < 3:
-    from builtins import raw_input as input
-else:
-    from future.builtins import input as input #"sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
+from future.builtins import input as input #"sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
 #########################################################
+
+##########################################################################################################
+##########################################################################################################
 
 ##########################################################################################################
 ##########################################################################################################
@@ -245,9 +248,8 @@ if __name__ == '__main__':
 
     ############################################
     ############################################
-    KillFlag = 0
-    UseSigkillForceCloseImmediatelyFlag = 0
-    ProcessNameToFindAndKill = "IngEcatGateway"
+    ProcessNameToFindAndKill = "Python"
+    KillFlag = 1
 
     try:
         if len(sys.argv) >= 2:
@@ -265,12 +267,8 @@ if __name__ == '__main__':
             else:
                 KillFlag = 0
 
-            if ARGV_2.lower().find("sigkill") != -1:
-                UseSigkillForceCloseImmediatelyFlag = 1
-            else:
-                UseSigkillForceCloseImmediatelyFlag = 0
+        print("KillFlag: " + str(KillFlag))
 
-        print("UseSigkillForceCloseImmediatelyFlag: " + str(UseSigkillForceCloseImmediatelyFlag))
     except:
         exceptions = sys.exc_info()[0]
         print("Parsing ARGV_1, exceptions: %s" % exceptions)
@@ -302,7 +300,7 @@ if __name__ == '__main__':
     ############################################
     ############################################
     if KillFlag == 1:
-        KillProcessByPIDlist(ListOfProcessesToKill, UseSigkillForceCloseImmediatelyFlag) #the 2nd argument allows us to include "SIGKILL"
+        KillProcessByPIDlist(ListOfProcessesToKill, KillFlag) #the 2nd argument allows us to include "SIGKILL"
     else:
         input("Without a 'kill' flag in ARGV, we'll find PIDs and wait for you to press any key to exit (without killing!)...")
     ############################################

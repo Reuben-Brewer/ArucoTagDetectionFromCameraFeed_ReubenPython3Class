@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision I, 02/02/2025
+Software Revision J, 12/30/2025
 
-Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Buster (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
+
+##########################################################################################################
+##########################################################################################################
+
+#########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
 
 #########################################################
 import os
@@ -25,39 +33,21 @@ from copy import * #for deepcopy(dict)
 import inspect #To enable 'TellWhichFileWereIn'
 import threading
 import decimal
+import queue as Queue
 import traceback
 #########################################################
 
 #########################################################
-import cv2 #"pip install opencv-contrib-python==4.5.5.64"
+import cv2 #"pip install opencv-contrib-python==4.12.0.88"
 import numpy
 print("OpenCV version: " + str(cv2.__version__))
 #########################################################
 
 #########################################################
-if sys.version_info[0] < 3:
-    from Tkinter import * #Python 2
-    import tkFont
-    import ttk
-else:
-    from tkinter import * #Python 3
-    import tkinter.font as tkFont #Python 3
-    from tkinter import ttk
+from tkinter import *
+import tkinter.font as tkFont
+from tkinter import ttk
 #########################################################
-
-#########################################################
-if sys.version_info[0] < 3:
-    import Queue  # Python 2
-else:
-    import queue as Queue  # Python 3
-#########################################################
-
-#########################################################
-if sys.version_info[0] < 3:
-    from builtins import raw_input as input
-else:
-    from future.builtins import input as input
-######################################################### #"sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
 
 #########################################################
 import platform
@@ -67,17 +57,20 @@ if platform.system() == "Windows":
     winmm.timeBeginPeriod(1) #Set minimum timer resolution to 1ms so that time.sleep(0.001) behaves properly.
 #########################################################
 
+##########################################################################################################
+##########################################################################################################
+
 class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __init__(self, setup_dict): #Subclass the Tkinter Frame
+    def __init__(self, SetupDict):
 
         print("#################### CameraStreamerClass_ReubenPython2and3Class __init__ starting. ####################")
 
         #########################################################
         #########################################################
-        self.setup_dict = setup_dict
+        self.SetupDict = SetupDict
 
         self.EXIT_PROGRAM_FLAG = 0
         self.OBJECT_CREATED_SUCCESSFULLY_FLAG = -1
@@ -193,8 +186,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "GUIparametersDict" in self.setup_dict:
-            self.GUIparametersDict = self.setup_dict["GUIparametersDict"]
+        if "GUIparametersDict" in self.SetupDict:
+            self.GUIparametersDict = self.SetupDict["GUIparametersDict"]
 
             #########################################################
             #########################################################
@@ -204,16 +197,6 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
                 self.USE_GUI_FLAG = 0
 
             print("CameraStreamerClass_ReubenPython2and3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            if "root" in self.GUIparametersDict:
-                self.root = self.GUIparametersDict["root"]
-            else:
-                print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass in 'root'")
-                return
             #########################################################
             #########################################################
 
@@ -349,11 +332,11 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "camera_selection_number" in self.setup_dict:
-            self.camera_selection_number = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("camera_selection_number", self.setup_dict["camera_selection_number"], 0.0, 10000.0))
+        if "camera_selection_number" in self.SetupDict:
+            self.camera_selection_number = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("camera_selection_number", self.SetupDict["camera_selection_number"], 0.0, 10000.0))
 
         else:
-            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'camera_selection_number' into setup_dict.")
+            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'camera_selection_number' into SetupDict.")
             return
 
         print("CameraStreamerClass_ReubenPython2and3Class __init__: camera_selection_number: " + str(self.camera_selection_number))
@@ -362,11 +345,11 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "camera_frame_rate" in self.setup_dict:
-            self.camera_frame_rate = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("camera_frame_rate", self.setup_dict["camera_frame_rate"], 0.0, 10000.0))
+        if "camera_frame_rate" in self.SetupDict:
+            self.camera_frame_rate = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("camera_frame_rate", self.SetupDict["camera_frame_rate"], 0.0, 10000.0))
 
         else:
-            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'camera_frame_rate' into setup_dict.")
+            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'camera_frame_rate' into SetupDict.")
             return
 
         print("CameraStreamerClass_ReubenPython2and3Class __init__: camera_frame_rate: " + str(self.camera_frame_rate))
@@ -375,11 +358,11 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "image_width" in self.setup_dict:
-            self.image_width = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_width", self.setup_dict["image_width"], 0.0, 10000.0))
+        if "image_width" in self.SetupDict:
+            self.image_width = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_width", self.SetupDict["image_width"], 0.0, 10000.0))
 
         else:
-            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'image_width' into setup_dict.")
+            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'image_width' into SetupDict.")
             return
 
         print("CameraStreamerClass_ReubenPython2and3Class __init__: image_width: " + str(self.image_width))
@@ -388,11 +371,11 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "image_height" in self.setup_dict:
-            self.image_height = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_height", self.setup_dict["image_height"], 0.0, 10000.0))
+        if "image_height" in self.SetupDict:
+            self.image_height = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_height", self.SetupDict["image_height"], 0.0, 10000.0))
 
         else:
-            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'image_height' into setup_dict.")
+            print("CameraStreamerClass_ReubenPython2and3Class __init__: ERROR, must pass 'image_height' into SetupDict.")
             return
 
         print("CameraStreamerClass_ReubenPython2and3Class __init__: image_height: " + str(self.image_height))
@@ -401,8 +384,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "NameToDisplay_UserSet" in self.setup_dict:
-            self.NameToDisplay_UserSet = str(self.setup_dict["NameToDisplay_UserSet"])
+        if "NameToDisplay_UserSet" in self.SetupDict:
+            self.NameToDisplay_UserSet = str(self.SetupDict["NameToDisplay_UserSet"])
         else:
             self.NameToDisplay_UserSet = ""
 
@@ -412,8 +395,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "DrawCircleAtImageCenterFlag" in self.setup_dict:
-            self.DrawCircleAtImageCenterFlag = self.PassThrough0and1values_ExitProgramOtherwise("DrawCircleAtImageCenterFlag", self.setup_dict["DrawCircleAtImageCenterFlag"])
+        if "DrawCircleAtImageCenterFlag" in self.SetupDict:
+            self.DrawCircleAtImageCenterFlag = self.PassThrough0and1values_ExitProgramOtherwise("DrawCircleAtImageCenterFlag", self.SetupDict["DrawCircleAtImageCenterFlag"])
         else:
             self.DrawCircleAtImageCenterFlag = 0
 
@@ -423,8 +406,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "image_jpg_encoding_quality" in self.setup_dict:
-            self.image_jpg_encoding_quality = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_jpg_encoding_quality", self.setup_dict["image_jpg_encoding_quality"], self.image_jpg_encoding_quality_min, self.image_jpg_encoding_quality_max))
+        if "image_jpg_encoding_quality" in self.SetupDict:
+            self.image_jpg_encoding_quality = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("image_jpg_encoding_quality", self.SetupDict["image_jpg_encoding_quality"], self.image_jpg_encoding_quality_min, self.image_jpg_encoding_quality_max))
 
         else:
             self.image_jpg_encoding_quality = round((self.image_jpg_encoding_quality_min + self.image_jpg_encoding_quality_max)/2.0)
@@ -435,8 +418,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_exposure" in self.setup_dict:
-            self.CameraSetting_exposure = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_exposure", self.setup_dict["CameraSetting_exposure"], self.CameraSetting_exposure_min, self.CameraSetting_exposure_max))
+        if "CameraSetting_exposure" in self.SetupDict:
+            self.CameraSetting_exposure = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_exposure", self.SetupDict["CameraSetting_exposure"], self.CameraSetting_exposure_min, self.CameraSetting_exposure_max))
 
         else:
             self.CameraSetting_exposure = round((self.CameraSetting_exposure_min + self.CameraSetting_exposure_max)/2.0)
@@ -447,8 +430,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_gain" in self.setup_dict:
-            self.CameraSetting_gain = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_gain", self.setup_dict["CameraSetting_gain"], self.CameraSetting_gain_min, self.CameraSetting_gain_max))
+        if "CameraSetting_gain" in self.SetupDict:
+            self.CameraSetting_gain = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_gain", self.SetupDict["CameraSetting_gain"], self.CameraSetting_gain_min, self.CameraSetting_gain_max))
 
         else:
             self.CameraSetting_gain = round((self.CameraSetting_gain_min + self.CameraSetting_gain_max)/2.0)
@@ -459,8 +442,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_brightness" in self.setup_dict:
-            self.CameraSetting_brightness = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_brightness", self.setup_dict["CameraSetting_brightness"], self.CameraSetting_brightness_min, self.CameraSetting_brightness_max))
+        if "CameraSetting_brightness" in self.SetupDict:
+            self.CameraSetting_brightness = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_brightness", self.SetupDict["CameraSetting_brightness"], self.CameraSetting_brightness_min, self.CameraSetting_brightness_max))
 
         else:
             self.CameraSetting_brightness = round((self.CameraSetting_brightness_min + self.CameraSetting_brightness_max)/2.0)
@@ -471,8 +454,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_contrast" in self.setup_dict:
-            self.CameraSetting_contrast = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_contrast", self.setup_dict["CameraSetting_contrast"], self.CameraSetting_contrast_min, self.CameraSetting_contrast_max))
+        if "CameraSetting_contrast" in self.SetupDict:
+            self.CameraSetting_contrast = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_contrast", self.SetupDict["CameraSetting_contrast"], self.CameraSetting_contrast_min, self.CameraSetting_contrast_max))
 
         else:
             self.CameraSetting_contrast = round((self.CameraSetting_contrast_min + self.CameraSetting_contrast_max)/2.0)
@@ -483,8 +466,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_saturation" in self.setup_dict:
-            self.CameraSetting_saturation = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_saturation", self.setup_dict["CameraSetting_saturation"], self.CameraSetting_saturation_min, self.CameraSetting_saturation_max))
+        if "CameraSetting_saturation" in self.SetupDict:
+            self.CameraSetting_saturation = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_saturation", self.SetupDict["CameraSetting_saturation"], self.CameraSetting_saturation_min, self.CameraSetting_saturation_max))
 
         else:
             self.CameraSetting_saturation = round((self.CameraSetting_saturation_min + self.CameraSetting_saturation_max)/2.0)
@@ -495,8 +478,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_hue" in self.setup_dict:
-            self.CameraSetting_hue = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_hue", self.setup_dict["CameraSetting_hue"], self.CameraSetting_hue_min, self.CameraSetting_hue_max))
+        if "CameraSetting_hue" in self.SetupDict:
+            self.CameraSetting_hue = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_hue", self.SetupDict["CameraSetting_hue"], self.CameraSetting_hue_min, self.CameraSetting_hue_max))
 
         else:
             self.CameraSetting_hue = round((self.CameraSetting_hue_min + self.CameraSetting_hue_max)/2.0)
@@ -507,8 +490,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_ManualFocus" in self.setup_dict:
-            self.CameraSetting_ManualFocus = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_ManualFocus", self.setup_dict["CameraSetting_ManualFocus"], self.CameraSetting_ManualFocus_min, self.CameraSetting_ManualFocus_max))
+        if "CameraSetting_ManualFocus" in self.SetupDict:
+            self.CameraSetting_ManualFocus = round(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraSetting_ManualFocus", self.SetupDict["CameraSetting_ManualFocus"], self.CameraSetting_ManualFocus_min, self.CameraSetting_ManualFocus_max))
 
         else:
             self.CameraSetting_ManualFocus = round((self.CameraSetting_ManualFocus_min + self.CameraSetting_ManualFocus_max)/2.0)
@@ -519,8 +502,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_Autofocus" in self.setup_dict:
-            self.CameraSetting_Autofocus = self.PassThrough0and1values_ExitProgramOtherwise("CameraSetting_Autofocus", self.setup_dict["CameraSetting_Autofocus"])
+        if "CameraSetting_Autofocus" in self.SetupDict:
+            self.CameraSetting_Autofocus = self.PassThrough0and1values_ExitProgramOtherwise("CameraSetting_Autofocus", self.SetupDict["CameraSetting_Autofocus"])
         else:
             self.CameraSetting_Autofocus = 1
 
@@ -530,8 +513,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraSetting_Autoexposure" in self.setup_dict:
-            self.CameraSetting_Autoexposure = self.PassThrough0and1values_ExitProgramOtherwise("CameraSetting_Autoexposure", self.setup_dict["CameraSetting_Autoexposure"])
+        if "CameraSetting_Autoexposure" in self.SetupDict:
+            self.CameraSetting_Autoexposure = self.PassThrough0and1values_ExitProgramOtherwise("CameraSetting_Autoexposure", self.SetupDict["CameraSetting_Autoexposure"])
         else:
             self.CameraSetting_Autoexposure = 1
 
@@ -541,8 +524,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "LaunchCameraSettingsDialog" in self.setup_dict:
-            self.LaunchCameraSettingsDialog = self.PassThrough0and1values_ExitProgramOtherwise("LaunchCameraSettingsDialog", self.setup_dict["LaunchCameraSettingsDialog"])
+        if "LaunchCameraSettingsDialog" in self.SetupDict:
+            self.LaunchCameraSettingsDialog = self.PassThrough0and1values_ExitProgramOtherwise("LaunchCameraSettingsDialog", self.SetupDict["LaunchCameraSettingsDialog"])
         else:
             self.LaunchCameraSettingsDialog = 0
 
@@ -552,8 +535,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "TkinterPreviewImageScalingFactor" in self.setup_dict:
-            self.TkinterPreviewImageScalingFactor = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("TkinterPreviewImageScalingFactor", self.setup_dict["TkinterPreviewImageScalingFactor"], 0.1, 10.0)
+        if "TkinterPreviewImageScalingFactor" in self.SetupDict:
+            self.TkinterPreviewImageScalingFactor = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("TkinterPreviewImageScalingFactor", self.SetupDict["TkinterPreviewImageScalingFactor"], 0.1, 10.0)
 
         else:
             self.TkinterPreviewImageScalingFactor = 1.0
@@ -564,8 +547,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraCaptureThread_TimeToSleepEachLoop" in self.setup_dict:
-            self.CameraCaptureThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraCaptureThread_TimeToSleepEachLoop", self.setup_dict["CameraCaptureThread_TimeToSleepEachLoop"], 0.001, 100000)
+        if "CameraCaptureThread_TimeToSleepEachLoop" in self.SetupDict:
+            self.CameraCaptureThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraCaptureThread_TimeToSleepEachLoop", self.SetupDict["CameraCaptureThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
             self.CameraCaptureThread_TimeToSleepEachLoop = 0.001
@@ -576,8 +559,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "CameraEncodeThread_TimeToSleepEachLoop" in self.setup_dict:
-            self.CameraEncodeThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraEncodeThread_TimeToSleepEachLoop", self.setup_dict["CameraEncodeThread_TimeToSleepEachLoop"], 0.001, 100000)
+        if "CameraEncodeThread_TimeToSleepEachLoop" in self.SetupDict:
+            self.CameraEncodeThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("CameraEncodeThread_TimeToSleepEachLoop", self.SetupDict["CameraEncodeThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
             self.CameraEncodeThread_TimeToSleepEachLoop = 0.001
@@ -588,8 +571,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "ImageSavingThread_TimeToSleepEachLoop" in self.setup_dict:
-            self.ImageSavingThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ImageSavingThread_TimeToSleepEachLoop", self.setup_dict["ImageSavingThread_TimeToSleepEachLoop"], 0.001, 100000)
+        if "ImageSavingThread_TimeToSleepEachLoop" in self.SetupDict:
+            self.ImageSavingThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ImageSavingThread_TimeToSleepEachLoop", self.SetupDict["ImageSavingThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
             self.ImageSavingThread_TimeToSleepEachLoop = 0.001
@@ -600,8 +583,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "EnableCameraEncodeThreadFlag" in self.setup_dict:
-            self.EnableCameraEncodeThreadFlag = self.PassThrough0and1values_ExitProgramOtherwise("EnableCameraEncodeThreadFlag", self.setup_dict["EnableCameraEncodeThreadFlag"])
+        if "EnableCameraEncodeThreadFlag" in self.SetupDict:
+            self.EnableCameraEncodeThreadFlag = self.PassThrough0and1values_ExitProgramOtherwise("EnableCameraEncodeThreadFlag", self.SetupDict["EnableCameraEncodeThreadFlag"])
         else:
             self.EnableCameraEncodeThreadFlag = 0
 
@@ -611,8 +594,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "EnableImageSavingThreadFlag" in self.setup_dict:
-            self.EnableImageSavingThreadFlag = self.PassThrough0and1values_ExitProgramOtherwise("EnableImageSavingThreadFlag", self.setup_dict["EnableImageSavingThreadFlag"])
+        if "EnableImageSavingThreadFlag" in self.SetupDict:
+            self.EnableImageSavingThreadFlag = self.PassThrough0and1values_ExitProgramOtherwise("EnableImageSavingThreadFlag", self.SetupDict["EnableImageSavingThreadFlag"])
         else:
             self.EnableImageSavingThreadFlag = 0
 
@@ -622,8 +605,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "RemoveFisheyeDistortionFromImage_Flag" in self.setup_dict:
-            self.RemoveFisheyeDistortionFromImage_Flag = self.PassThrough0and1values_ExitProgramOtherwise("RemoveFisheyeDistortionFromImage_Flag", self.setup_dict["RemoveFisheyeDistortionFromImage_Flag"])
+        if "RemoveFisheyeDistortionFromImage_Flag" in self.SetupDict:
+            self.RemoveFisheyeDistortionFromImage_Flag = self.PassThrough0and1values_ExitProgramOtherwise("RemoveFisheyeDistortionFromImage_Flag", self.SetupDict["RemoveFisheyeDistortionFromImage_Flag"])
         else:
             self.RemoveFisheyeDistortionFromImage_Flag = 0
 
@@ -639,32 +622,32 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "Camera_SavedImages_LocalDirectoryNameNoSlashes" in self.setup_dict:
-            self.Camera_SavedImages_LocalDirectoryNameNoSlashes = self.setup_dict["Camera_SavedImages_LocalDirectoryNameNoSlashes"]
+        if "Camera_SavedImages_LocalDirectoryNameNoSlashes" in self.SetupDict:
+            self.Camera_SavedImages_LocalDirectoryNameNoSlashes = self.SetupDict["Camera_SavedImages_LocalDirectoryNameNoSlashes"]
         else:
             self.Camera_SavedImages_LocalDirectoryNameNoSlashes = "Camera_SavedImages"
 
-        print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__: Camera_SavedImages_LocalDirectoryNameNoSlashes: " + str(self.Camera_SavedImages_LocalDirectoryNameNoSlashes))
+        print("CameraStreamerClass_ReubenPython2and3Class __init__: Camera_SavedImages_LocalDirectoryNameNoSlashes: " + str(self.Camera_SavedImages_LocalDirectoryNameNoSlashes))
         #########################################################
         #########################################################
 
         #########################################################
         #########################################################
-        if "Camera_SavedImages_FilenamePrefix" in self.setup_dict:
-            self.Camera_SavedImages_FilenamePrefix = self.setup_dict["Camera_SavedImages_FilenamePrefix"]
+        if "Camera_SavedImages_FilenamePrefix" in self.SetupDict:
+            self.Camera_SavedImages_FilenamePrefix = self.SetupDict["Camera_SavedImages_FilenamePrefix"]
         else:
             self.Camera_SavedImages_FilenamePrefix = "Camera_"
 
-        print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__: Camera_SavedImages_FilenamePrefix: " + str(self.Camera_SavedImages_FilenamePrefix))
+        print("CameraStreamerClass_ReubenPython2and3Class __init__: Camera_SavedImages_FilenamePrefix: " + str(self.Camera_SavedImages_FilenamePrefix))
         #########################################################
         #########################################################
 
         ######################################################### unicorn
         #########################################################
-        if "CameraCalibrationParametersDict" in self.setup_dict:
+        if "CameraCalibrationParametersDict" in self.SetupDict:
 
             #########################################################
-            CameraCalibrationParametersDict_TEMP = self.setup_dict["CameraCalibrationParametersDict"]
+            CameraCalibrationParametersDict_TEMP = self.SetupDict["CameraCalibrationParametersDict"]
             self.CameraCalibrationParametersDict = dict()
 
             KeysToVerifyExist = ["fx", "fy", "cx", "cy", "k1", "k2", "p1", "p2"]
@@ -706,8 +689,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "OpenCVbackendToUseEnglishName" in self.setup_dict:
-            OpenCVbackendToUseEnglishName_TEMP = self.setup_dict["OpenCVbackendToUseEnglishName"]
+        if "OpenCVbackendToUseEnglishName" in self.SetupDict:
+            OpenCVbackendToUseEnglishName_TEMP = self.SetupDict["OpenCVbackendToUseEnglishName"]
 
             if OpenCVbackendToUseEnglishName_TEMP in self.OpenCVsupportedBackendsDictWithEnglishNamesAsKeys:
                 self.OpenCVbackendToUseEnglishName = OpenCVbackendToUseEnglishName_TEMP
@@ -724,8 +707,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
         #########################################################
         #########################################################
-        if "FOURCC_ToUse" in self.setup_dict:
-            self.FOURCC_ToUse = self.setup_dict["FOURCC_ToUse"]
+        if "FOURCC_ToUse" in self.SetupDict:
+            self.FOURCC_ToUse = self.SetupDict["FOURCC_ToUse"]
 
         else:
             self.FOURCC_ToUse = cv2.VideoWriter_fourcc(*'MJPG') #cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
@@ -813,6 +796,8 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
             '''
 
             self.IsCameraOpenFlag = self.CVcapture.isOpened()
+
+            print("CameraStreamerClass_ReubenPython2and3Class __init__: We're opening, closing, and re-opening to reset camera in case it didn't close properly in last program run")
             ###############################################
 
         except:
@@ -905,19 +890,6 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
             if self.EnableImageSavingThreadFlag == 1:
                 self.ImageSavingThread_ThreadingObject = threading.Thread(target=self.ImageSavingThread, args=())
                 self.ImageSavingThread_ThreadingObject.start()
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            if self.USE_GUI_FLAG == 1:
-                self.StartGUI(self.root)
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            time.sleep(0.25)
             #########################################################
             #########################################################
 
@@ -1150,65 +1122,200 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
+    def LimitNumber_IntOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
 
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = int(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def LimitNumber_FloatOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = float(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
 
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be 0 or 1 (value was " +
+                      str(InputNumber_ConvertedToFloat) +
+                      ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
         except:
+
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
         try:
+            ##########################################################################################################
             InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
 
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be in the range [" +
-                          str(RangeMinValue) +
-                          ", " +
-                          str(RangeMaxValue) +
-                          "] (value was " +
-                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
                 sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
         except:
+            ##########################################################################################################
             exceptions = sys.exc_info()[0]
             print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -1891,26 +1998,14 @@ class CameraStreamerClass_ReubenPython2and3Class(Frame): #Subclass the Tkinter F
 
     ##########################################################################################################
     ##########################################################################################################
-    def StartGUI(self, GuiParent):
+    def CreateGUIobjects(self, TkinterParent):
 
-        #self.GUI_Thread_ThreadingObject = threading.Thread(target=self.GUI_Thread, args=(GuiParent,))
-        #self.GUI_Thread_ThreadingObject.setDaemon(True) #Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        #self.GUI_Thread_ThreadingObject.start()
-
-        self.GUI_Thread(GuiParent)
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def GUI_Thread(self, parent):
-
-        print("Starting the GUI_Thread for CameraStreamerClass_ReubenPython2and3Class object.")
+        print("CameraStreamerClass_ReubenPython2and3Class, TkinterParent event fired.")
 
         ################################################
         ################################################
-        self.root = parent
-        self.parent = parent
+        self.root = TkinterParent
+        self.parent = TkinterParent
         ################################################
         ################################################
 

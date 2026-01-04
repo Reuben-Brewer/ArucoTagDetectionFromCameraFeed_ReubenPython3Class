@@ -1,9 +1,11 @@
 {
-    "UDPdataExchanger_Directions": "",
-    "UDPdataExchanger_NameToDisplay_UserSet":"UDPdataExchanger",
-    "UDPdataExchanger_UDP_RxOrTxRole":"tx",
-    "UDPdataExchanger_IPV4_address":"192.168.1.77",
-    "UDPdataExchanger_IPV4_Port":1,
-    "UDPdataExchanger_UDP_BufferSizeInBytes":128,
-    "UDPdataExchanger_MainThread_TimeToSleepEachLoop":0.002
+    "UDPdataExchanger___Directions": "",
+    "UDPdataExchanger___NameToDisplay_UserSet":"UDPdataExchanger",
+    "UDPdataExchanger___UDP_RxOrTxRole":"tx",
+    "UDPdataExchanger___IPV4_address":"127.0.0.1",
+    "UDPdataExchanger___IPV4_Port":1,
+    "UDPdataExchanger___UDP_BufferSizeInBytes":128,
+    "UDPdataExchanger___UDP_TimeoutAtPortLevelInSeconds": 0.1,
+    "UDPdataExchanger___WatchdogTimerExpirationDurationSeconds": 1.0,
+    "UDPdataExchanger___MainThread_TimeToSleepEachLoop":0.002
 }

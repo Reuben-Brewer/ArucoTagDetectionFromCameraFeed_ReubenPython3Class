@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 02/02/2025
+Software Revision H, 01/02/2026
 
-Verified working on: Python 3.12 for Windows 11 64-bit, Ubuntu 20.04, and Raspberry Pi Bullseye, Bookworm (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
+
+#######################################################################################################################
+#######################################################################################################################
+
+#########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
 
 #########################################################
 #https://github.com/Reuben-Brewer/ArucoTagDetectionFromCameraFeed_ReubenPython3Class
@@ -22,9 +30,6 @@ from CSVdataLogger_ReubenPython3Class import *
 
 #https://github.com/Reuben-Brewer/MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class
 from MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class import *
-
-#https://github.com/Reuben-Brewer/MyPrint_ReubenPython2and3Class
-from MyPrint_ReubenPython2and3Class import *
 
 #https://github.com/Reuben-Brewer/UDPdataExchanger_ReubenPython3Class
 from UDPdataExchanger_ReubenPython3Class import *
@@ -41,6 +46,9 @@ import collections
 import argparse
 import json
 import re #for def ParseColonCommaSeparatedVariableString
+import math
+import numpy
+import traceback
 import keyboard
 #########################################################
 
@@ -60,29 +68,32 @@ if platform.system() == "Windows":
 
 #######################################################################################################################
 #######################################################################################################################
+
+#######################################################################################################################
+#######################################################################################################################
 global ParametersToBeLoaded_Directory_Windows
-ParametersToBeLoaded_Directory_Windows = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Windows = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_Windows
-LogFile_Directory_Windows = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_Windows = os.path.join(os.getcwd(), "Logs")
 
 global ParametersToBeLoaded_Directory_LinuxNonRaspberryPi
-ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_LinuxNonRaspberryPi = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_LinuxNonRaspberryPi
-LogFile_Directory_LinuxNonRaspberryPi = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_LinuxNonRaspberryPi = os.path.join(os.getcwd(), "Logs")
 
 global ParametersToBeLoaded_Directory_LinuxRaspberryPi
-ParametersToBeLoaded_Directory_LinuxRaspberryPi = "//home//pinis//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_LinuxRaspberryPi = "//home//pi//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//ParametersToBeLoaded"
 
 global LogFile_Directory_LinuxRaspberryPi
-LogFile_Directory_LinuxRaspberryPi = "//home//pinis//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//Logs"
+LogFile_Directory_LinuxRaspberryPi = "//home//pi//Desktop//ArucoTagDetectionFromCameraFeed_PythonDeploymentFiles//Logs"
 
 global ParametersToBeLoaded_Directory_Mac
-ParametersToBeLoaded_Directory_Mac = os.getcwd().replace("\\", "//") + "//ParametersToBeLoaded"
+ParametersToBeLoaded_Directory_Mac = os.path.join(os.getcwd(), "ParametersToBeLoaded")
 
 global LogFile_Directory_Mac
-LogFile_Directory_Mac = os.getcwd().replace("\\", "//") + "//Logs"
+LogFile_Directory_Mac = os.path.join(os.getcwd(), "Logs")
 #######################################################################################################################
 #######################################################################################################################
 
@@ -838,17 +849,13 @@ def GUI_update_clock():
     global GUI_RootAfterCallbackInterval_Milliseconds
     global USE_GUI_FLAG
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+    global ArucoTag_Object
     global ArucoTag_OPEN_FLAG
     global SHOW_IN_GUI_ArucoTag_FLAG
 
-    global CSVdataLogger_ReubenPython3ClassObject
+    global CSVdataLogger_Object
     global CSVdataLogger_OPEN_FLAG
     global SHOW_IN_GUI_CSVdataLogger_FLAG
-
-    global MyPrint_ReubenPython2and3ClassObject
-    global MyPrint_OPEN_FLAG
-    global SHOW_IN_GUI_MyPrint_FLAG
 
     global UDPdataExchanger_Object
     global UDPdataExchanger_OPEN_FLAG
@@ -860,6 +867,7 @@ def GUI_update_clock():
     global ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker
 
     if USE_GUI_FLAG == 1:
+
         if EXIT_PROGRAM_FLAG == 0:
         #########################################################
         #########################################################
@@ -882,17 +890,12 @@ def GUI_update_clock():
 
                     #########################################################
                     if ArucoTag_OPEN_FLAG == 1 and SHOW_IN_GUI_ArucoTag_FLAG == 1:
-                        ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.GUI_update_clock()
+                        ArucoTag_Object.GUI_update_clock()
                     #########################################################
 
                     #########################################################
                     if CSVdataLogger_OPEN_FLAG == 1 and SHOW_IN_GUI_CSVdataLogger_FLAG == 1:
-                        CSVdataLogger_ReubenPython3ClassObject.GUI_update_clock()
-                    #########################################################
-
-                    #########################################################
-                    if MyPrint_OPEN_FLAG == 1 and SHOW_IN_GUI_MyPrint_FLAG == 1:
-                        MyPrint_ReubenPython2and3ClassObject.GUI_update_clock()
+                        CSVdataLogger_Object.GUI_update_clock()
                     #########################################################
 
                     #########################################################
@@ -915,9 +918,11 @@ def GUI_update_clock():
 ##########################################################################################################
 def ExitProgram_Callback(OptionalArugment = 0):
     global EXIT_PROGRAM_FLAG
-    global CSVdataLogger_ReubenPython3ClassObject
+
+    global CSVdataLogger_Object
     global CSVdataLogger_OPEN_FLAG
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+
+    global ArucoTag_Object
     global ArucoTag_OPEN_FLAG
 
     try:
@@ -928,14 +933,14 @@ def ExitProgram_Callback(OptionalArugment = 0):
 
             ##########################################################################################################
             ##########################################################################################################
-            if CSVdataLogger_ReubenPython3ClassObject.IsSaving() == 0:
+            if CSVdataLogger_Object.IsSaving() == 0:
 
                 ##########################################################################################################
                 ##########################################################################################################
                 if ArucoTag_OPEN_FLAG == 1:
 
                     ##########################################################################################################
-                    if ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.IsSaving() == 0:
+                    if ArucoTag_Object.IsSaving() == 0:
                         print("ExitProgram_Callback event fired!")
                         EXIT_PROGRAM_FLAG = 1
                     ##########################################################################################################
@@ -982,7 +987,7 @@ def ExitProgram_Callback(OptionalArugment = 0):
             if ArucoTag_OPEN_FLAG == 1:
 
                 ##########################################################################################################
-                if ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.IsSaving() == 0:
+                if ArucoTag_Object.IsSaving() == 0:
                     print("ExitProgram_Callback event fired!")
                     EXIT_PROGRAM_FLAG = 1
                 ##########################################################################################################
@@ -1038,9 +1043,23 @@ def GUI_Thread():
     global TKinter_DefaultGrayColor
     global SHOW_IN_GUI_UR5arm_MostRecentDict_FLAG
 
+    global ArucoTag_Object
+    global ArucoTag_OPEN_FLAG
+
+    global CSVdataLogger_Object
+    global CSVdataLogger_OPEN_FLAG
+
+    global UDPdataExchanger_Object
+    global UDPdataExchanger_OPEN_FLAG
+
     ########################################################### KEY GUI LINE
     ###########################################################
     root = Tk()
+
+    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
+    root.title(GUItitleString)
+    root.geometry('%dx%d+%d+%d' % (
+    root_width, root_height, root_Xpos, root_Ypos))  # set the dimensions of the screen and where it is placed
     ###########################################################
     ###########################################################
 
@@ -1062,23 +1081,19 @@ def GUI_Thread():
     ###########################################################
     ###########################################################
 
-    ############################################
-    ############################################
+    ###########################################################
+    ###########################################################
     global TabControlObject
     global Tab_MainControls
-    global Tab_ArucoTagDetection
-    global Tab_MyPrint
+    global Tab_ArucoTag
 
     TabControlObject = ttk.Notebook(root)
 
-    Tab_ArucoTagDetection = ttk.Frame(TabControlObject)
-    TabControlObject.add(Tab_ArucoTagDetection, text='   ArucoTagDetection  ')
+    Tab_ArucoTag = ttk.Frame(TabControlObject)
+    TabControlObject.add(Tab_ArucoTag, text='   ArucoTag  ')
 
     Tab_MainControls = ttk.Frame(TabControlObject)
     TabControlObject.add(Tab_MainControls, text='   Main Controls   ')
-
-    Tab_MyPrint = ttk.Frame(TabControlObject)
-    TabControlObject.add(Tab_MyPrint, text='   MyPrint Terminal   ')
 
     TabControlObject.pack(expand=1, fill="both")  # CANNOT MIX PACK AND GRID IN THE SAME FRAME/TAB, SO ALL .GRID'S MUST BE CONTAINED WITHIN THEIR OWN FRAME/TAB.
 
@@ -1087,17 +1102,17 @@ def GUI_Thread():
     TabStyle.configure('TNotebook.Tab', font=('Helvetica', '12', 'bold'))
     #############
 
-    #################################################
-    #################################################
+    ###########################################################
+    ###########################################################
 
-    ############################################
-    ############################################
+    ###########################################################
+    ###########################################################
     global JSONfiles_NeedsToBeLoadedFlagButton
     JSONfiles_NeedsToBeLoadedFlagButton = Button(Tab_MainControls, text="Load JSON files", state="normal", width=GUIbuttonWidth, command=lambda i=1: JSONfiles_NeedsToBeLoadedFlag_ButtonResponse())
     JSONfiles_NeedsToBeLoadedFlagButton.grid(row=0, column=1, padx=GUIbuttonPadX, pady=GUIbuttonPadY, columnspan=1, rowspan=1,)
     JSONfiles_NeedsToBeLoadedFlagButton.config(font=("Helvetica", GUIbuttonFontSize))
-    ############################################
-    ############################################
+    ###########################################################
+    ###########################################################
 
     ###########################################################
     ###########################################################
@@ -1107,21 +1122,38 @@ def GUI_Thread():
     ###########################################################
     ###########################################################
 
-    #################################################
-    #################################################
+    ###########################################################
+    ###########################################################
     global UDPdataExchanger_MostRecentDict_Label
     UDPdataExchanger_MostRecentDict_Label = Label(Tab_MainControls, text="UDPdataExchanger_MostRecentDict_Label", width=120, font=("Helvetica", 10))
     UDPdataExchanger_MostRecentDict_Label.grid(row=2, column=0, padx=1, pady=1, columnspan=1, rowspan=1)
-    #################################################
-    #################################################
+    ###########################################################
+    ###########################################################
+
+    ###########################################################
+    ###########################################################
+    if ArucoTag_OPEN_FLAG == 1:
+        ArucoTag_Object.CreateGUIobjects(TkinterParent=Tab_ArucoTag)
+    ###########################################################
+    ###########################################################
+
+    ###########################################################
+    ###########################################################
+    if UDPdataExchanger_OPEN_FLAG == 1:
+        UDPdataExchanger_Object.CreateGUIobjects(TkinterParent=Tab_MainControls)
+    ###########################################################
+    ###########################################################
+
+    ###########################################################
+    ###########################################################
+    if CSVdataLogger_OPEN_FLAG == 1:
+        CSVdataLogger_Object.CreateGUIobjects(TkinterParent=Tab_MainControls)
+    ###########################################################
+    ###########################################################
 
     ########################################################### THIS BLOCK MUST COME 2ND-TO-LAST IN def  GUI_Thread() IF USING TABS.
     ###########################################################
-    root.protocol("WM_DELETE_WINDOW", ExitProgram_Callback)  # Set the callback function for when the window's closed.
-    root.title(GUItitleString)
     root.after(GUI_RootAfterCallbackInterval_Milliseconds, GUI_update_clock)
-    root.geometry('%dx%d+%d+%d' % (
-    root_width, root_height, root_Xpos, root_Ypos))  # set the dimensions of the screen and where it is placed
     root.mainloop()
     ###########################################################
     ###########################################################
@@ -1136,20 +1168,26 @@ def GUI_Thread():
 ##########################################################################################################
 ##########################################################################################################
 
-#######################################################################################################################
-#######################################################################################################################
+##########################################################################################################
+##########################################################################################################
 def JSONfiles_NeedsToBeLoadedFlag_ButtonResponse():
     global JSONfiles_NeedsToBeLoadedFlag
 
     JSONfiles_NeedsToBeLoadedFlag = 1
 
-    MyPrint_ReubenPython2and3ClassObject.my_print("JSONfiles_NeedsToBeLoadedFlag_ButtonResponse event fired!")
-#######################################################################################################################
-#######################################################################################################################
+    print("JSONfiles_NeedsToBeLoadedFlag_ButtonResponse event fired!")
+##########################################################################################################
+##########################################################################################################
 
 ##########################################################################################################
 ##########################################################################################################
+##########################################################################################################
+##########################################################################################################
 if __name__ == '__main__':
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ################################################
     ################################################
@@ -1222,18 +1260,21 @@ if __name__ == '__main__':
     ################################################
     ################################################
 
-    ##################################################
+    #################################################
+    #################################################
+
     #################################################
     global JSONfiles_NeedsToBeLoadedFlag
     JSONfiles_NeedsToBeLoadedFlag = 0
+    #################################################
 
     #################################################
     global UseClassesFlags_Directions
     global USE_ArucoTag_FLAG
     global USE_CSVdataLogger_FLAG
     global USE_MyPlotterPureTkinterStandAloneProcess_FLAG
-    global USE_MyPrint_FLAG
     global USE_UDPdataExchanger_FLAG
+    global USE_CreateAndSaveArucoTagImages_FLAG
     global USE_GUI_FLAG
     global USE_KEYBOARD_FLAG
     global USE_PrintUDPdataForDebuggingFlag
@@ -1246,7 +1287,6 @@ if __name__ == '__main__':
 
     global SHOW_IN_GUI_ArucoTag_FLAG
     global SHOW_IN_GUI_CSVdataLogger_FLAG
-    global SHOW_IN_GUI_MyPrint_FLAG
     global SHOW_IN_GUI_MyPlotterPureTkinterStandAloneProcess_FLAG
 
     global GUItitleString
@@ -1260,12 +1300,12 @@ if __name__ == '__main__':
     global GUIbuttonPadY
     global GUIbuttonFontSize
 
-    global GUI_ROW_ArucoTagDetection
-    global GUI_COLUMN_ArucoTagDetection
-    global GUI_PADX_ArucoTagDetection
-    global GUI_PADY_ArucoTagDetection
-    global GUI_ROWSPAN_ArucoTagDetection
-    global GUI_COLUMNSPAN_ArucoTagDetection
+    global GUI_ROW_ArucoTag
+    global GUI_COLUMN_ArucoTag
+    global GUI_PADX_ArucoTag
+    global GUI_PADY_ArucoTag
+    global GUI_ROWSPAN_ArucoTag
+    global GUI_COLUMNSPAN_ArucoTag
 
     global GUI_ROW_CSVdataLogger
     global GUI_COLUMN_CSVdataLogger
@@ -1273,13 +1313,6 @@ if __name__ == '__main__':
     global GUI_PADY_CSVdataLogger
     global GUI_ROWSPAN_CSVdataLogger
     global GUI_COLUMNSPAN_CSVdataLogger
-
-    global GUI_ROW_MyPrint
-    global GUI_COLUMN_MyPrint
-    global GUI_PADX_MyPrint
-    global GUI_PADY_MyPrint
-    global GUI_ROWSPAN_MyPrint
-    global GUI_COLUMNSPAN_MyPrint
     
     global GUI_ROW_UDPdataExchanger
     global GUI_COLUMN_UDPdataExchanger
@@ -1356,21 +1389,21 @@ if __name__ == '__main__':
     #################################################
 
     #################################################
-    global UDPdataExchanger_Directions
-    global UDPdataExchanger_NameToDisplay_UserSet
-    global UDPdataExchanger_UDP_RxOrTxRole
-    global UDPdataExchanger_IPV4_address
-    global UDPdataExchanger_IPV4_Port
-    global UDPdataExchanger_UDP_BufferSizeInBytes
-    global UDPdataExchanger_MainThread_TimeToSleepEachLoop
+    global UDPdataExchanger___Directions
+    global UDPdataExchanger___NameToDisplay_UserSet
+    global UDPdataExchanger___UDP_RxOrTxRole
+    global UDPdataExchanger___IPV4_address
+    global UDPdataExchanger___IPV4_Port
+    global UDPdataExchanger___UDP_BufferSizeInBytes
+    global UDPdataExchanger___MainThread_TimeToSleepEachLoop
 
     LoadAndParseJSONfile_UDPdataExchanger()
     #################################################
 
     #################################################
     global MyPlotterPureTkinterStandAloneProcess_Directions
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict
+    global MyPlotterPureTkinterStandAloneProcess_GUIparametersDict
+    global MyPlotterPureTkinterStandAloneProcess_SetupDict
     global MyPlotterPureTkinterStandAloneProcess_RefreshDurationInSeconds
 
     LoadAndParseJSONfile_MyPlotterPureTkinterStandAloneProcess()
@@ -1385,8 +1418,7 @@ if __name__ == '__main__':
 
     global TabControlObject
     global Tab_MainControls
-    global Tab_ArucoTagDetection
-    global Tab_MyPrint
+    global Tab_ArucoTag
     global Tab_UDPdataExchanger
 
     global CurrentTime_MainLoopThread
@@ -1441,7 +1473,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject
+    global ArucoTag_Object
 
     global ArucoTag_OPEN_FLAG
     ArucoTag_OPEN_FLAG = -1
@@ -1462,7 +1494,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global CSVdataLogger_ReubenPython3ClassObject
+    global CSVdataLogger_Object
 
     global CSVdataLogger_OPEN_FLAG
     CSVdataLogger_OPEN_FLAG = -1
@@ -1472,15 +1504,6 @@ if __name__ == '__main__':
 
     global CSVdataLogger_MostRecentDict_Time
     CSVdataLogger_MostRecentDict_Time = -11111.0
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    global MyPrint_ReubenPython2and3ClassObject
-
-    global MyPrint_OPEN_FLAG
-    MyPrint_OPEN_FLAG = -1
     #################################################
     #################################################
 
@@ -1499,7 +1522,7 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject
+    global MyPlotterPureTkinterStandAloneProcess_Object
 
     global MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG
     MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = -1
@@ -1507,258 +1530,216 @@ if __name__ == '__main__':
     global MyPlotterPureTkinter_MostRecentDict
     MyPlotterPureTkinter_MostRecentDict = dict()
 
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag = -1
+    global MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag
+    MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag = -1
 
     global LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess
     LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = -11111.0
     #################################################
     #################################################
 
-    #################################################
-    #################################################
-    print("USE_GUI_FLAG: " + str(USE_GUI_FLAG))
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################  KEY GUI LINE
-    #################################################
-    if USE_GUI_FLAG == 1:
-        StartingTime_CalculatedFromGUIthread = getPreciseSecondsTimeStampString()
-        print("Starting GUI thread...")
-
-        global GUI_Thread_ThreadingObject
-        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread)
-        GUI_Thread_ThreadingObject.setDaemon(True)  # Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        GUI_Thread_ThreadingObject.start()
-        time.sleep(0.5)  # Allow enough time for 'root' to be created that we can then pass it into other classes.
-    else:
-        root = None
-        Tab_MainControls = None
-        Tab_ArucoTagDetection = None
-        Tab_MyPrint = None
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     ################################################
     ################################################
-    global CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict
-    CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict = dict([("MainThread_TimeToSleepEachLoop", 0.030),
-                                                                        ("NameToDisplay_UserSet", "Camera"),
-                                                                        ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
-                                                                        ("camera_selection_number", camera_selection_number),
-                                                                        ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
-                                                                        ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
-                                                                        ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
-                                                                        ("camera_frame_rate", camera_frame_rate),
-                                                                        ("image_width", image_width),
-                                                                        ("image_height", image_height),
-                                                                        ("image_jpg_encoding_quality", image_jpg_encoding_quality),
-                                                                        ("CameraSetting_Autofocus", CameraSetting_Autofocus),
-                                                                        ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
-                                                                        ("CameraSetting_exposure", CameraSetting_exposure),
-                                                                        ("CameraSetting_gain", CameraSetting_gain),
-                                                                        ("CameraSetting_brightness", CameraSetting_brightness),
-                                                                        ("CameraSetting_contrast", CameraSetting_contrast),
-                                                                        ("CameraSetting_saturation", CameraSetting_saturation),
-                                                                        ("CameraSetting_hue", CameraSetting_hue),
-                                                                        ("DrawCircleAtImageCenterFlag", DrawCircleAtImageCenterFlag),
-                                                                        ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
-                                                                        ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
-                                                                        ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
-                                                                        ("CameraCalibrationParametersDict", CameraCalibrationParametersDict),
-                                                                        ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
-                                                                        ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes),
-                                                                        ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix)])
+    global CameraStreamerClass_SetupDict
+    CameraStreamerClass_SetupDict = dict([("MainThread_TimeToSleepEachLoop", 0.030),
+                                            ("NameToDisplay_UserSet", "Camera"),
+                                            ("TkinterPreviewImageScalingFactor", camera_TkinterPreviewImageScalingFactor),
+                                            ("camera_selection_number", camera_selection_number),
+                                            ("CameraCaptureThread_TimeToSleepEachLoop", CameraCaptureThread_TimeToSleepEachLoop),
+                                            ("CameraEncodeThread_TimeToSleepEachLoop", CameraEncodeThread_TimeToSleepEachLoop),
+                                            ("ImageSavingThread_TimeToSleepEachLoop", ImageSavingThread_TimeToSleepEachLoop),
+                                            ("camera_frame_rate", camera_frame_rate),
+                                            ("image_width", image_width),
+                                            ("image_height", image_height),
+                                            ("image_jpg_encoding_quality", image_jpg_encoding_quality),
+                                            ("CameraSetting_Autofocus", CameraSetting_Autofocus),
+                                            ("CameraSetting_Autoexposure", CameraSetting_Autoexposure),
+                                            ("CameraSetting_exposure", CameraSetting_exposure),
+                                            ("CameraSetting_gain", CameraSetting_gain),
+                                            ("CameraSetting_brightness", CameraSetting_brightness),
+                                            ("CameraSetting_contrast", CameraSetting_contrast),
+                                            ("CameraSetting_saturation", CameraSetting_saturation),
+                                            ("CameraSetting_hue", CameraSetting_hue),
+                                            ("DrawCircleAtImageCenterFlag", DrawCircleAtImageCenterFlag),
+                                            ("EnableCameraEncodeThreadFlag", EnableCameraEncodeThreadFlag),
+                                            ("EnableImageSavingThreadFlag", EnableImageSavingThreadFlag),
+                                            ("RemoveFisheyeDistortionFromImage_Flag", RemoveFisheyeDistortionFromImage_Flag),
+                                            ("CameraCalibrationParametersDict", CameraCalibrationParametersDict),
+                                            ("OpenCVbackendToUseEnglishName", OpenCVbackendToUseEnglishName),
+                                            ("Camera_SavedImages_LocalDirectoryNameNoSlashes", Camera_SavedImages_LocalDirectoryNameNoSlashes),
+                                            ("Camera_SavedImages_FilenamePrefix", Camera_SavedImages_FilenamePrefix)])
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG),
-                                    ("root", Tab_ArucoTagDetection),
-                                    ("EnableInternal_MyPrint_Flag", 0),
-                                    ("NumberOfPrintLines", 10),
-                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_ArucoTagDetection),
-                                    ("GUI_COLUMN", GUI_COLUMN_ArucoTagDetection),
-                                    ("GUI_PADX", GUI_PADX_ArucoTagDetection),
-                                    ("GUI_PADY", GUI_PADY_ArucoTagDetection),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_ArucoTagDetection),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_ArucoTagDetection)])
+    global ArucoTag_GUIparametersDict
+    ArucoTag_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG),
+                                                                                ("EnableInternal_MyPrint_Flag", 0),
+                                                                                ("NumberOfPrintLines", 10),
+                                                                                ("UseBorderAroundThisGuiObjectFlag", 0),
+                                                                                ("GUI_ROW", GUI_ROW_ArucoTag),
+                                                                                ("GUI_COLUMN", GUI_COLUMN_ArucoTag),
+                                                                                ("GUI_PADX", GUI_PADX_ArucoTag),
+                                                                                ("GUI_PADY", GUI_PADY_ArucoTag),
+                                                                                ("GUI_ROWSPAN", GUI_ROWSPAN_ArucoTag),
+                                                                                ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_ArucoTag)])
 
-    global ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict = dict([("GUIparametersDict", ArucoTagDetectionFromCameraFeed_ReubenPython3Class_GUIparametersDict),
-                                                                ("CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict", CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict),
-                                                                ("NameToDisplay_UserSet", "ArucoTagDetectionFromCameraFeed"),
-                                                                ("ShowOpenCVwindowsFlag", ShowOpenCVwindowsFlag),
-                                                                ("OpenCVwindowPosX", OpenCVwindowPosX),
-                                                                ("OpenCVwindowPosY", OpenCVwindowPosY),
-                                                                ("OpenCVwindow_UpdateEveryNmilliseconds", OpenCVwindow_UpdateEveryNmilliseconds),
-                                                                ("MainThread_TimeToSleepEachLoop", test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class_MainThread_TimeToSleepEachLoop),
-                                                                ("ArucoTag_DictType_EnglishString", ArucoTag_DictType_EnglishString),
-                                                                ("ArucoTag_MarkerLengthInMillimeters", ArucoTag_MarkerLengthInMillimeters),
-                                                                ("ArucoTag_AxesToDrawLengthInMillimeters", ArucoTag_AxesToDrawLengthInMillimeters),
-                                                                ("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
-                                                                ("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
-                                                                ("TkinterPreviewImageScalingFactor", ArucoTag_TkinterPreviewImageScalingFactor),
-                                                                ("ArucoTag_SavedImages_LocalDirectoryNameNoSlashes", ArucoTag_SavedImages_LocalDirectoryNameNoSlashes),
-                                                                ("ArucoTag_SavedImages_FilenamePrefix", ArucoTag_SavedImages_FilenamePrefix),
-                                                                ("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag)])
+    global ArucoTag_SetupDict
+    ArucoTag_SetupDict = dict([("GUIparametersDict", ArucoTag_GUIparametersDict),
+                                                                        ("CameraStreamerClass_SetupDict", CameraStreamerClass_SetupDict),
+                                                                        ("NameToDisplay_UserSet", "ArucoTagDetectionFromCameraFeed"),
+                                                                        ("ShowOpenCVwindowsFlag", ShowOpenCVwindowsFlag),
+                                                                        ("OpenCVwindowPosX", OpenCVwindowPosX),
+                                                                        ("OpenCVwindowPosY", OpenCVwindowPosY),
+                                                                        ("OpenCVwindow_UpdateEveryNmilliseconds", OpenCVwindow_UpdateEveryNmilliseconds),
+                                                                        ("MainThread_TimeToSleepEachLoop", test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class_MainThread_TimeToSleepEachLoop),
+                                                                        ("ArucoTag_DictType_EnglishString", ArucoTag_DictType_EnglishString),
+                                                                        ("ArucoTag_MarkerLengthInMillimeters", ArucoTag_MarkerLengthInMillimeters),
+                                                                        ("ArucoTag_AxesToDrawLengthInMillimeters", ArucoTag_AxesToDrawLengthInMillimeters),
+                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
+                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda),
+                                                                        ("TkinterPreviewImageScalingFactor", ArucoTag_TkinterPreviewImageScalingFactor),
+                                                                        ("ArucoTag_SavedImages_LocalDirectoryNameNoSlashes", ArucoTag_SavedImages_LocalDirectoryNameNoSlashes),
+                                                                        ("ArucoTag_SavedImages_FilenamePrefix", ArucoTag_SavedImages_FilenamePrefix),
+                                                                        ("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag)])
 
 
     ###@@@
-    CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict["camera_selection_number"] = int(camera_selection_number)
-    ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"] = CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict
+    CameraStreamerClass_SetupDict["camera_selection_number"] = int(camera_selection_number)
+    ArucoTag_SetupDict["CameraStreamerClass_SetupDict"] = CameraStreamerClass_SetupDict
     ###@@@
 
     if USE_ArucoTag_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
-            print("Preparing to create and start ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.")
-            ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject = ArucoTagDetectionFromCameraFeed_ReubenPython3Class(ArucoTagDetectionFromCameraFeed_ReubenPython3Class_setup_dict)
-            ArucoTag_OPEN_FLAG = ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if ArucoTag_OPEN_FLAG != 1:
-                print("Failed to open ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.")
-                ExitProgram_Callback()
-            #################################################
+            ArucoTag_Object = ArucoTagDetectionFromCameraFeed_ReubenPython3Class(ArucoTag_SetupDict)
+            ArucoTag_OPEN_FLAG = ArucoTag_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
         except:
             exceptions = sys.exc_info()[0]
-            print("ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject __init__: Exceptions: %s" % exceptions)
+            print("ArucoTag_Object __init__: Exceptions: %s" % exceptions)
             traceback.print_exc()
     #################################################
     #################################################
+    
+    #################################################
+    #################################################
+    if USE_ArucoTag_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if ArucoTag_OPEN_FLAG != 1:
+                print("Failed to open ArucoTag_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     #################################################
     #################################################
-    global CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict
-    CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CSVdataLogger_FLAG),
-                                    ("root", Tab_MainControls),
-                                    ("EnableInternal_MyPrint_Flag", 1),
-                                    ("NumberOfPrintLines", 10),
-                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_CSVdataLogger),
-                                    ("GUI_COLUMN", GUI_COLUMN_CSVdataLogger),
-                                    ("GUI_PADX", GUI_PADX_CSVdataLogger),
-                                    ("GUI_PADY", GUI_PADY_CSVdataLogger),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_CSVdataLogger),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CSVdataLogger)])
+    global CSVdataLogger_GUIparametersDict
+    CSVdataLogger_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_CSVdataLogger_FLAG),
+                                            ("EnableInternal_MyPrint_Flag", 1),
+                                            ("NumberOfPrintLines", 10),
+                                            ("UseBorderAroundThisGuiObjectFlag", 0),
+                                            ("GUI_ROW", GUI_ROW_CSVdataLogger),
+                                            ("GUI_COLUMN", GUI_COLUMN_CSVdataLogger),
+                                            ("GUI_PADX", GUI_PADX_CSVdataLogger),
+                                            ("GUI_PADY", GUI_PADY_CSVdataLogger),
+                                            ("GUI_ROWSPAN", GUI_ROWSPAN_CSVdataLogger),
+                                            ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_CSVdataLogger)])
 
-    global CSVdataLogger_ReubenPython3ClassObject_setup_dict
-    CSVdataLogger_ReubenPython3ClassObject_setup_dict = dict([("GUIparametersDict", CSVdataLogger_ReubenPython3ClassObject_GUIparametersDict),
-                                                                                ("NameToDisplay_UserSet", "CSVdataLogger"),
-                                                                                ("CSVfile_DirectoryPath", "C:\\CSVfiles"),
-                                                                                ("FileNamePrefix", "Aruco_"),
-                                                                                ("VariableNamesForHeaderList", ["Time (S)",
-                                                                                                                "X0",
-                                                                                                                "Y0",
-                                                                                                                "Z0",
-                                                                                                                "X1",
-                                                                                                                "Y1",
-                                                                                                                "Z1",
-                                                                                                                "LineFromPrimaryMarkerToSecondaryMarker_DistanceMM",
-                                                                                                                "LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground"]),
-                                                                                ("MainThread_TimeToSleepEachLoop", 0.002),
-                                                                                ("SaveOnStartupFlag", 0)])
+    global CSVdataLogger_SetupDict
+    CSVdataLogger_SetupDict = dict([("GUIparametersDict", CSVdataLogger_GUIparametersDict),
+                                    ("NameToDisplay_UserSet", "CSVdataLogger"),
+                                    ("CSVfile_DirectoryPath", os.path.join(os.getcwd(), "SavedCSVfiles")),
+                                    ("FileNamePrefix", "Aruco_"),
+                                    ("VariableNamesForHeaderList", ["Time (S)",
+                                                                    "X0",
+                                                                    "Y0",
+                                                                    "Z0",
+                                                                    "X1",
+                                                                    "Y1",
+                                                                    "Z1",
+                                                                    "LineFromPrimaryMarkerToSecondaryMarker_DistanceMM",
+                                                                    "LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground"]),
+                                    ("MainThread_TimeToSleepEachLoop", 0.002),
+                                    ("SaveOnStartupFlag", 0)])
 
     if USE_CSVdataLogger_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
-            print("Preparing to create and start CSVdataLogger_ReubenPython3ClassObject.")
-            CSVdataLogger_ReubenPython3ClassObject = CSVdataLogger_ReubenPython3Class(CSVdataLogger_ReubenPython3ClassObject_setup_dict)
-            CSVdataLogger_OPEN_FLAG = CSVdataLogger_ReubenPython3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            CSVdataLogger_Object = CSVdataLogger_ReubenPython3Class(CSVdataLogger_SetupDict)
+            CSVdataLogger_OPEN_FLAG = CSVdataLogger_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
-            #################################################
+        except:
+            exceptions = sys.exc_info()[0]
+            print("CSVdataLogger_Object __init__: Exceptions: %s" % exceptions)
+            traceback.print_exc()
+    #################################################
+    #################################################
+    
+    #################################################
+    #################################################
+    if USE_CSVdataLogger_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
             if CSVdataLogger_OPEN_FLAG != 1:
-                print("Failed to open CSVdataLogger_ReubenPython3ClassObject.")
+                print("Failed to open CSVdataLogger_Object.")
                 ExitProgram_Callback()
-            #################################################
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("CSVdataLogger_ReubenPython3ClassObject __init__: Exceptions: %s" % exceptions)
-            traceback.print_exc()
     #################################################
     #################################################
 
-    #################################################
-    #################################################
-    global MyPrint_ReubenPython2and3ClassObject_GUIparametersDict
-    MyPrint_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
-                                                                    ("root", Tab_MyPrint),
-                                                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                    ("GUI_ROW", GUI_ROW_MyPrint),
-                                                                    ("GUI_COLUMN", GUI_COLUMN_MyPrint),
-                                                                    ("GUI_PADX", GUI_PADX_MyPrint),
-                                                                    ("GUI_PADY", GUI_PADY_MyPrint),
-                                                                    ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
-                                                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    global MyPrint_ReubenPython2and3ClassObject_setup_dict
-    MyPrint_ReubenPython2and3ClassObject_setup_dict = dict([("NumberOfPrintLines", 10),
-                                                            ("WidthOfPrintingLabel", 200),
-                                                            ("PrintToConsoleFlag", 1),
-                                                            ("LogFileNameFullPath", os.getcwd() + "//TestLog.txt"),
-                                                            ("GUIparametersDict", MyPrint_ReubenPython2and3ClassObject_GUIparametersDict)])
-
-    if USE_MyPrint_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-        try:
-            print("Preparing to create and start MyPrint_ReubenPython2and3ClassObject.")
-            MyPrint_ReubenPython2and3ClassObject = MyPrint_ReubenPython2and3Class(MyPrint_ReubenPython2and3ClassObject_setup_dict)
-            MyPrint_OPEN_FLAG = MyPrint_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if MyPrint_OPEN_FLAG != 1:
-                print("Failed to open MyPrint_ReubenPython2and3ClassObject.")
-                ExitProgram_Callback()
-            #################################################
-
-        except:
-            exceptions = sys.exc_info()[0]
-            print("MyPrint_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions)
-            traceback.print_exc()
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     #################################################
     #################################################
 
     #################################################
-    global UDPdataExchanger_GUIparametersDict
-    UDPdataExchanger_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_UDPdataExchanger_FLAG),
-                                    ("root", Tab_MainControls),
-                                    ("EnableInternal_MyPrint_Flag", 0),
-                                    ("NumberOfPrintLines", 10),
-                                    ("UseBorderAroundThisGuiObjectFlag", 0),
-                                    ("GUI_ROW", GUI_ROW_UDPdataExchanger),
-                                    ("GUI_COLUMN", GUI_COLUMN_UDPdataExchanger),
-                                    ("GUI_PADX", GUI_PADX_UDPdataExchanger),
-                                    ("GUI_PADY", GUI_PADY_UDPdataExchanger),
-                                    ("GUI_ROWSPAN", GUI_ROWSPAN_UDPdataExchanger),
-                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_UDPdataExchanger)])
+    global UDPdataExchanger___GUIparametersDict
+    UDPdataExchanger___GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_UDPdataExchanger_FLAG),
+                                            ("EnableInternal_MyPrint_Flag", 0),
+                                            ("NumberOfPrintLines", 10),
+                                            ("UseBorderAroundThisGuiObjectFlag", 0),
+                                            ("GUI_ROW", GUI_ROW_UDPdataExchanger),
+                                            ("GUI_COLUMN", GUI_COLUMN_UDPdataExchanger),
+                                            ("GUI_PADX", GUI_PADX_UDPdataExchanger),
+                                            ("GUI_PADY", GUI_PADY_UDPdataExchanger),
+                                            ("GUI_ROWSPAN", GUI_ROWSPAN_UDPdataExchanger),
+                                            ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_UDPdataExchanger)])
     #################################################
 
     #################################################
-    global UDPdataExchanger_setup_dict
-    UDPdataExchanger_setup_dict = dict([("GUIparametersDict", UDPdataExchanger_GUIparametersDict),
-                                        ("NameToDisplay_UserSet", UDPdataExchanger_NameToDisplay_UserSet),
-                                        ("UDP_RxOrTxRole", UDPdataExchanger_UDP_RxOrTxRole),
-                                        ("IPV4_address", UDPdataExchanger_IPV4_address),
-                                        ("IPV4_Port", UDPdataExchanger_IPV4_Port),
-                                        ("UDP_BufferSizeInBytes", UDPdataExchanger_UDP_BufferSizeInBytes),
-                                        ("MainThread_TimeToSleepEachLoop", UDPdataExchanger_MainThread_TimeToSleepEachLoop)])
+    global UDPdataExchanger___SetupDict
+    UDPdataExchanger___SetupDict = dict([("GUIparametersDict", UDPdataExchanger___GUIparametersDict),
+                                        ("NameToDisplay_UserSet", UDPdataExchanger___NameToDisplay_UserSet),
+                                        ("UDP_RxOrTxRole", UDPdataExchanger___UDP_RxOrTxRole),
+                                        ("IPV4_address", UDPdataExchanger___IPV4_address),
+                                        ("IPV4_Port", UDPdataExchanger___IPV4_Port),
+                                        ("UDP_BufferSizeInBytes", UDPdataExchanger___UDP_BufferSizeInBytes),
+                                        ("UDP_TimeoutAtPortLevelInSeconds", UDPdataExchanger___UDP_TimeoutAtPortLevelInSeconds),
+                                        ("WatchdogTimerExpirationDurationSeconds", UDPdataExchanger___WatchdogTimerExpirationDurationSeconds),
+                                        ("MainThread_TimeToSleepEachLoop", UDPdataExchanger___MainThread_TimeToSleepEachLoop)])
     #################################################
 
     #################################################
     if USE_UDPdataExchanger_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
-            print("Preparing to create and start UDPdataExchanger_Object.")
-            UDPdataExchanger_Object = UDPdataExchanger_ReubenPython3Class(UDPdataExchanger_setup_dict)
+            UDPdataExchanger_Object = UDPdataExchanger_ReubenPython3Class(UDPdataExchanger___SetupDict)
             UDPdataExchanger_OPEN_FLAG = UDPdataExchanger_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if UDPdataExchanger_OPEN_FLAG != 1:
-                print("Failed to open UDPdataExchanger_ReubenPython3ClassObject.")
-                ExitProgram_Callback()
-            #################################################
 
         except:
             exceptions = sys.exc_info()[0]
@@ -1771,94 +1752,101 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict = dict([("EnableInternal_MyPrint_Flag", 1),
-                                                                                                ("NumberOfPrintLines", 10),
-                                                                                                ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                                                ("GraphCanvasWidth", 890),
-                                                                                                ("GraphCanvasHeight", 700),
-                                                                                                ("GraphCanvasWindowStartingX", 0),
-                                                                                                ("GraphCanvasWindowStartingY", 0),
-                                                                                                ("GUI_RootAfterCallbackInterval_Milliseconds_IndependentOfParentRootGUIloopEvents", 20)])
-
-    global MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict
-    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict = dict([("GUIparametersDict", MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_GUIparametersDict),
-                                                                                        ("ParentPID", os.getpid()),
-                                                                                        ("WatchdogTimerExpirationDurationSeconds_StandAlonePlottingProcess", 5.0),
-                                                                                        ("MarkerSize", 3),
-                                                                                        ("CurvesToPlotNamesAndColorsDictOfLists", dict([("NameList", ["Channel0", "Channel1", "Channel2"]),("ColorList", ["Red", "Green", "Blue"])])),
-                                                                                        ("NumberOfDataPointToPlot", 50),
-                                                                                        ("XaxisNumberOfTickMarks", 10),
-                                                                                        ("YaxisNumberOfTickMarks", 10),
-                                                                                        ("XaxisNumberOfDecimalPlacesForLabels", 3),
-                                                                                        ("YaxisNumberOfDecimalPlacesForLabels", 3),
-                                                                                        ("XaxisAutoscaleFlag", 1),
-                                                                                        ("YaxisAutoscaleFlag", 1),
-                                                                                        ("X_min", 0.0),
-                                                                                        ("X_max", 20.0),
-                                                                                        ("Y_min", -0.0015),
-                                                                                        ("Y_max", 0.0015),
-                                                                                        ("XaxisDrawnAtBottomOfGraph", 0),
-                                                                                        ("XaxisLabelString", "Time (sec)"),
-                                                                                        ("YaxisLabelString", "Y-units (units)"),
-                                                                                        ("ShowLegendFlag", 1)])
-
-    if USE_GUI_FLAG == 1 and USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-        try:
-            print("Preparing to create and start MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.")
-            MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict)
-            MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
-
-            #################################################
-            if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
-                print("Failed to open MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.")
+    if USE_UDPdataExchanger_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if UDPdataExchanger_OPEN_FLAG != 1:
+                print("Failed to open UDPdataExchanger_Object.")
                 ExitProgram_Callback()
-            #################################################
+    #################################################
+    #################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    MyPlotterPureTkinterStandAloneProcess_SetupDict["GUIparametersDict"] = MyPlotterPureTkinterStandAloneProcess_GUIparametersDict
+    MyPlotterPureTkinterStandAloneProcess_SetupDict["SavePlot_DirectoryPath"] = os.path.join(os.getcwd(), "SavedImagesFolder")
+
+    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        try:
+            MyPlotterPureTkinterStandAloneProcess_Object = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(MyPlotterPureTkinterStandAloneProcess_SetupDict)
+            MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = MyPlotterPureTkinterStandAloneProcess_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
         except:
             exceptions = sys.exc_info()[0]
-            print("MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject, exceptions: %s" % exceptions)
+            print("MyPlotterPureTkinterStandAloneProcess_Object, exceptions: %s" % exceptions)
             traceback.print_exc()
     #################################################
     #################################################
 
-    ################################################# THIS SECTION IS FOR CREATING AND SAVING ARUCO TAGS
     #################################################
-    if EXIT_PROGRAM_FLAG == 0:
-        pass
+    #################################################
+    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1:
+        if EXIT_PROGRAM_FLAG == 0:
+            if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
+                print("Failed to open MyPlotterPureTkinterStandAloneProcess_Object.")
+                ExitProgram_Callback()
+    #################################################
+    #################################################
 
-        '''
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ########################################################################################################## THIS SECTION IS FOR CREATING AND SAVING ARUCO TAGS
+    ##########################################################################################################
+    ##########################################################################################################
+    if USE_CreateAndSaveArucoTagImages_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+
         for ID_integer in range(1,13):
             print(ID_integer)
-            ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.CreateAndSaveImageOfArucoTagMarker(ID_integer=ID_integer, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 350, WhiteBorderPixelWidth_integer = 50, BlackOutermostBorderPixelWidth_integer=1)
+            ArucoTag_Object.CreateAndSaveImageOfArucoTagMarker(ID_integer=ID_integer, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 350, WhiteBorderPixelWidth_integer = 50, BlackOutermostBorderPixelWidth_integer=1)
         
-        ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.CreateAndSaveImageOfArucoTagMarker(ID_integer=0, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 1000, WhiteBorderPixelWidth_integer = 50)
-        ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.CreateAndSaveImageOfArucoTagMarker(ID_integer=1, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 1000, WhiteBorderPixelWidth_integer = 50)
+        ArucoTag_Object.CreateAndSaveImageOfArucoTagMarker(ID_integer=0, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 1000, WhiteBorderPixelWidth_integer = 50)
+        ArucoTag_Object.CreateAndSaveImageOfArucoTagMarker(ID_integer=1, ArucoTag_DictType_EnglishString = "",EdgeLengthInPixels_integer = 1000, WhiteBorderPixelWidth_integer = 50)
         EXIT_PROGRAM_FLAG = 1
-        '''
-    #################################################
-    #################################################
 
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
     if USE_KEYBOARD_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
-        print("Preparing to enable keyboard.")
         keyboard.on_press_key("esc", ExitProgram_Callback)
-    #################################################
-    #################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################
-    #################################################
+    ########################################################################################################## KEY GUI LINE
+    ##########################################################################################################
+    ##########################################################################################################
+    print("USE_GUI_FLAG: " + str(USE_GUI_FLAG))
+
+    if USE_GUI_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
+        print("Starting GUI thread...")
+        StartingTime_CalculatedFromGUIthread = getPreciseSecondsTimeStampString()
+        GUI_Thread_ThreadingObject = threading.Thread(target=GUI_Thread, daemon=True) #Daemon=True means that the GUI thread is destroyed automatically when the main thread is destroyed
+        GUI_Thread_ThreadingObject.start()
+    else:
+        root = None
+        Tab_MainControls = None
+        Tab_ArucoTag = None
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
     if EXIT_PROGRAM_FLAG == 0:
         print("Starting main loop 'test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class.py.")
         StartingTime_MainLoopThread = getPreciseSecondsTimeStampString()
-    #################################################
-    #################################################
 
-    #################################################
-    #################################################
-    #################################################
-    #################################################
     while(EXIT_PROGRAM_FLAG == 0):
 
         #################################################
@@ -1897,7 +1885,7 @@ if __name__ == '__main__':
             try:
                 #################################################
                 #################################################
-                ArucoTag_MostRecentDict = ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.GetMostRecentDataDict()
+                ArucoTag_MostRecentDict = ArucoTag_Object.GetMostRecentDataDict()
                 #print("ArucoTag_MostRecentDict: " + str(ArucoTag_MostRecentDict))
                 ####################################################
                 ####################################################
@@ -1962,7 +1950,7 @@ if __name__ == '__main__':
 
             except:
                 exceptions = sys.exc_info()[0]
-                print("while 1, ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject GET's, exceptions: %s" % exceptions)
+                print("while 1, ArucoTag_Object GET's, exceptions: %s" % exceptions)
                 # traceback.print_exc()
 
         ####################################################
@@ -1981,7 +1969,7 @@ if __name__ == '__main__':
                 if 1:#ArucoTag_MarkerIDToDetect_PrimaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict and ArucoTag_MarkerIDToDetect_SecondaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict:
                     if 1: #(LineFromPrimaryMarkerToSecondaryMarker_DistanceMM < ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker + ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold) and (LineFromPrimaryMarkerToSecondaryMarker_DistanceMM > ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker - ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold):
 
-                        CSVdataLogger_ReubenPython3ClassObject.AddDataToCSVfile_ExternalFunctionCall([ArucoTag_MostRecentDict_Time,
+                        CSVdataLogger_Object.AddDataToCSVfile_ExternalFunctionCall([ArucoTag_MostRecentDict_Time,
                                         ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[0],
                                         ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[1],
                                         ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[2],
@@ -1999,7 +1987,7 @@ if __name__ == '__main__':
                 ####################################################
                 ####################################################
                 exceptions = sys.exc_info()[0]
-                print("while 1, CSVdataLogger_ReubenPython3ClassObject SET's, exceptions: %s" % exceptions)
+                print("while 1, CSVdataLogger_Object SET's, exceptions: %s" % exceptions)
                 # traceback.print_exc()
                 ####################################################
                 ####################################################
@@ -2017,9 +2005,9 @@ if __name__ == '__main__':
 
                 ####################################################
                 ####################################################
-                if UDPdataExchanger_UDP_RxOrTxRole == "tx":
+                if UDPdataExchanger___UDP_RxOrTxRole == "tx":
                     DictToTx = dict([("PrimaryMarker", ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker),
-                                                                              ("TestTime", CurrentTime_MainLoopThread)])
+                                    ("TestTime", CurrentTime_MainLoopThread)])
 
                     UDPdataExchanger_Object.SendDictFromExternalProgram(DictToTx)
 
@@ -2052,19 +2040,19 @@ if __name__ == '__main__':
 
                 ####################################################
                 ####################################################
-                MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.GetMostRecentDataDict()
+                MyPlotterPureTkinterStandAloneProcess_MostRecentDict = MyPlotterPureTkinterStandAloneProcess_Object.GetMostRecentDataDict()
 
-                if "StandAlonePlottingProcess_ReadyForWritingFlag" in MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict:
-                    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict["StandAlonePlottingProcess_ReadyForWritingFlag"]
+                if "StandAlonePlottingProcess_ReadyForWritingFlag" in MyPlotterPureTkinterStandAloneProcess_MostRecentDict:
+                    MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag = MyPlotterPureTkinterStandAloneProcess_MostRecentDict["StandAlonePlottingProcess_ReadyForWritingFlag"]
 
-                    if MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict_StandAlonePlottingProcess_ReadyForWritingFlag == 1:
+                    if MyPlotterPureTkinterStandAloneProcess_MostRecentDict_ReadyForWritingFlag == 1:
                         if CurrentTime_MainLoopThread - LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess >= MyPlotterPureTkinterStandAloneProcess_RefreshDurationInSeconds:
 
                             if ArucoTag_MarkerIDToDetect_PrimaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict: #and ArucoTag_MarkerIDToDetect_SecondaryMarker in ArucoTag_MostRecentDict_DetectedArucoTag_InfoDict:
                                 if 1:#(LineFromPrimaryMarkerToSecondaryMarker_DistanceMM < ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker + ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold) and (LineFromPrimaryMarkerToSecondaryMarker_DistanceMM > ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker - ArucoTag_DistanceBetweenPrimaryMarkerAndSecondaryMarker_ClosenessThreshold):
 
                                     #'''
-                                    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1", "Channel2"],
+                                    MyPlotterPureTkinterStandAloneProcess_Object.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1", "Channel2"],
                                                                                                                                             [CurrentTime_MainLoopThread]*3,
                                                                                                                                             [ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[0],
                                                                                                                                              ArucoTag_TranslationVectorOfMarkerCenter_PythonList_PrimaryMarker[1],
@@ -2072,14 +2060,14 @@ if __name__ == '__main__':
                                     #'''
 
                                     '''
-                                    MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1", "Channel2"],
+                                    MyPlotterPureTkinterStandAloneProcess_Object.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1", "Channel2"],
                                                                                                                                             [CurrentTime_MainLoopThread]*3,
                                                                                                                                             [ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList_PrimaryMarker[0],
                                                                                                                                              ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList_PrimaryMarker[1],
                                                                                                                                              ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList_PrimaryMarker[2]])
                                     '''
 
-                                    #MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1"], [CurrentTime_MainLoopThread]*2, [LineFromPrimaryMarkerToSecondaryMarker_DistanceMM, LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground])
+                                    #MyPlotterPureTkinterStandAloneProcess_Object.ExternalAddPointOrListOfPointsToPlot(["Channel0", "Channel1"], [CurrentTime_MainLoopThread]*2, [LineFromPrimaryMarkerToSecondaryMarker_DistanceMM, LineFromPrimaryMarkerToSecondaryMarker_AngleWRTground])
 
 
                                     LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = CurrentTime_MainLoopThread
@@ -2091,7 +2079,7 @@ if __name__ == '__main__':
                 ####################################################
                 ####################################################
                 exceptions = sys.exc_info()[0]
-                print("while 1, MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject SET's, exceptions: %s" % exceptions)
+                print("while 1, MyPlotterPureTkinterStandAloneProcess_Object SET's, exceptions: %s" % exceptions)
                 # traceback.print_exc()
                 ####################################################
                 ####################################################
@@ -2104,30 +2092,23 @@ if __name__ == '__main__':
         ArucoTag_DetectionTimeInMilliseconds_SecondaryMarker_Last = ArucoTag_DetectionTimeInMilliseconds_SecondaryMarker
 
         time.sleep(0.030)
-    ####################################################
-    ####################################################
-    ####################################################
-    ####################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
-    #################################################### THIS IS THE EXIT ROUTINE!
-    ####################################################
-    ####################################################
-    ####################################################
+    ########################################################################################################## THIS IS THE EXIT ROUTINE!
+    ##########################################################################################################
+    ##########################################################################################################
     print("Exiting main program 'test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class.py.")
 
     ####################################################
     if ArucoTag_OPEN_FLAG == 1:
-        ArucoTagDetectionFromCameraFeed_ReubenPython3ClassObject.ExitProgram_Callback()
+        ArucoTag_Object.ExitProgram_Callback()
     ####################################################
 
     ####################################################
     if CSVdataLogger_OPEN_FLAG == 1:
-        CSVdataLogger_ReubenPython3ClassObject.ExitProgram_Callback()
-    ####################################################
-
-    ####################################################
-    if MyPrint_OPEN_FLAG == 1:
-        MyPrint_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        CSVdataLogger_Object.ExitProgram_Callback()
     ####################################################
 
     ####################################################
@@ -2137,13 +2118,14 @@ if __name__ == '__main__':
 
     ####################################################
     if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG == 1:
-        MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        MyPlotterPureTkinterStandAloneProcess_Object.ExitProgram_Callback()
     ####################################################
 
-    ####################################################
-    ####################################################
-    ####################################################
-    ####################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
 
+##########################################################################################################
+##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################

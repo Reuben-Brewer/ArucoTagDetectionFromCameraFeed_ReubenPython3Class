@@ -6,12 +6,20 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 02/02/2025
+Software Revision H, 01/02/2026
 
-Verified working on: Python 3.12 for Windows 11 64-bit, Ubuntu 20.04, and Raspberry Pi Bullseye, Bookworm (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
+
+##########################################################################################################
+##########################################################################################################
+
+#########################################################
+import ReubenGithubCodeModulePaths #Replaces the need to have "ReubenGithubCodeModulePaths.pth" within "C:\Anaconda3\Lib\site-packages".
+ReubenGithubCodeModulePaths.Enable()
+#########################################################
 
 #########################################################
 #https://github.com/Reuben-Brewer/CameraStreamerClass_ReubenPython2and3Class
@@ -34,6 +42,7 @@ import math
 import collections
 import inspect #To enable 'TellWhichFileWereIn'
 import threading
+import queue as Queue
 import traceback
 from scipy.spatial.transform import Rotation
 from copy import * #for deepcopy(dict)
@@ -52,14 +61,6 @@ from tkinter import ttk
 #########################################################
 
 #########################################################
-import queue as Queue
-#########################################################
-
-#########################################################
-from future.builtins import input as input
-######################################################### "sudo pip3 install future" (Python 3) AND "sudo pip install future" (Python 2)
-
-#########################################################
 import platform
 if platform.system() == "Windows":
     import ctypes
@@ -67,24 +68,27 @@ if platform.system() == "Windows":
     winmm.timeBeginPeriod(1) #Set minimum timer resolution to 1ms so that time.sleep(0.001) behaves properly.
 #########################################################
 
+##########################################################################################################
+##########################################################################################################
+
 class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     #######################################################################################################################
     #######################################################################################################################
-    def __init__(self, setup_dict): #Subclass the Tkinter Frame
+    def __init__(self, SetupDict): #Subclass the Tkinter Frame
 
         print("#################### ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__ starting. ####################")
 
         #########################################################
         #########################################################
-        self.setup_dict = setup_dict
+        self.SetupDict = SetupDict
 
         self.EXIT_PROGRAM_FLAG = 0
         self.OBJECT_CREATED_SUCCESSFULLY_FLAG = 0
         self.MainThread_StillRunningFlag = 0
         self.OpenCVdisplayThread_StillRunningFlag = 0
         self.ImageSavingThread_StillRunningFlag = 0
-        self.CAMERA_OPEN_FLAG = 0
+        self.CameraStreamerClass_OPEN_FLAG = 0
 
         self.CurrentTime_CalculatedFromMainThread = -11111.0
         self.LastTime_CalculatedFromMainThread = -11111.0
@@ -98,8 +102,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         self.DataStreamingFrequency_CalculatedFromOpenCVdisplayThread = -11111.0
         self.DataStreamingDeltaT_CalculatedFromOpenCVdisplayThread = -11111.0
 
-        self.CAMERA_MostRecentDict_Time = -11111.0
-        self.CAMERA_MostRecentDict_Time_LAST = -11111.0
+        self.CameraStreamerClass_MostRecentDict_Time = -11111.0
+        self.CameraStreamerClass_MostRecentDict_Time_LAST = -11111.0
 
         self.AcceptNewImagesForSavingFlag = 0
         self.SaveImageFlag = 0
@@ -111,30 +115,30 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         #https://docs.opencv.org/3.4/d9/d6a/group__aruco.html
 
         self.ArucoTag_DictType_AcceptableEnglishStringValuesDictOfDicts = dict([("DICT_4X4_50", dict([("cv2intValue", cv2.aruco.DICT_4X4_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 4)])),
-                                                                         ("DICT_4X4_100", dict([("cv2intValue", cv2.aruco.DICT_4X4_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 3)])),
-                                                                         ("DICT_4X4_250", dict([("cv2intValue", cv2.aruco.DICT_4X4_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 4)])),
-                                                                         ("DICT_4X4_1000", dict([("cv2intValue", cv2.aruco.DICT_4X4_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
-                                                                         ("DICT_5X5_50", dict([("cv2intValue", cv2.aruco.DICT_5X5_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 8)])),
-                                                                         ("DICT_5X5_100", dict([("cv2intValue", cv2.aruco.DICT_5X5_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 7)])),
-                                                                         ("DICT_5X5_250", dict([("cv2intValue", cv2.aruco.DICT_5X5_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 6)])),
-                                                                         ("DICT_5X5_1000", dict([("cv2intValue", cv2.aruco.DICT_5X5_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
-                                                                         ("DICT_6X6_50", dict([("cv2intValue", cv2.aruco.DICT_6X6_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 13)])),
-                                                                         ("DICT_6X6_100", dict([("cv2intValue", cv2.aruco.DICT_6X6_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 12)])),
-                                                                         ("DICT_6X6_250", dict([("cv2intValue", cv2.aruco.DICT_6X6_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 11)])),
-                                                                         ("DICT_6X6_1000", dict([("cv2intValue", cv2.aruco.DICT_6X6_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
-                                                                         ("DICT_7X7_50", dict([("cv2intValue", cv2.aruco.DICT_7X7_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 19)])),
-                                                                         ("DICT_7X7_100", dict([("cv2intValue", cv2.aruco.DICT_7X7_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 18)])),
-                                                                         ("DICT_7X7_250", dict([("cv2intValue", cv2.aruco.DICT_7X7_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 17)])),
-                                                                         ("DICT_7X7_1000", dict([("cv2intValue", cv2.aruco.DICT_7X7_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 14)])),
-                                                                         ("DICT_ARUCO_ORIGINAL", dict([("cv2intValue", cv2.aruco.DICT_ARUCO_ORIGINAL), ("MaxIDvalue", 1024 - 1), ("MinHammingDistanceBetweenCodes", 3)])),
-                                                                         ("DICT_APRILTAG_16h5", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_16h5), ("MaxIDvalue", 30 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
-                                                                         ("DICT_APRILTAG_16H5", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_16H5), ("MaxIDvalue", 30 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
-                                                                         ("DICT_APRILTAG_25h9", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_25h9), ("MaxIDvalue", 35 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
-                                                                         ("DICT_APRILTAG_25H9", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_25H9), ("MaxIDvalue", 35 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
-                                                                         ("DICT_APRILTAG_36h10", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36h10), ("MaxIDvalue", 2320 - 1), ("MinHammingDistanceBetweenCodes", 10)])),
-                                                                         ("DICT_APRILTAG_36H10", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36H10), ("MaxIDvalue", 2320 - 1), ("MinHammingDistanceBetweenCodes", 10)])),
-                                                                         ("DICT_APRILTAG_36h11", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36h11), ("MaxIDvalue", 587 - 1), ("MinHammingDistanceBetweenCodes", 11)])),
-                                                                         ("DICT_APRILTAG_36H11", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36H11), ("MaxIDvalue", 587 - 1), ("MinHammingDistanceBetweenCodes", 11)]))])
+                                                                                 ("DICT_4X4_100", dict([("cv2intValue", cv2.aruco.DICT_4X4_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 3)])),
+                                                                                 ("DICT_4X4_250", dict([("cv2intValue", cv2.aruco.DICT_4X4_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 4)])),
+                                                                                 ("DICT_4X4_1000", dict([("cv2intValue", cv2.aruco.DICT_4X4_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
+                                                                                 ("DICT_5X5_50", dict([("cv2intValue", cv2.aruco.DICT_5X5_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 8)])),
+                                                                                 ("DICT_5X5_100", dict([("cv2intValue", cv2.aruco.DICT_5X5_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 7)])),
+                                                                                 ("DICT_5X5_250", dict([("cv2intValue", cv2.aruco.DICT_5X5_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 6)])),
+                                                                                 ("DICT_5X5_1000", dict([("cv2intValue", cv2.aruco.DICT_5X5_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
+                                                                                 ("DICT_6X6_50", dict([("cv2intValue", cv2.aruco.DICT_6X6_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 13)])),
+                                                                                 ("DICT_6X6_100", dict([("cv2intValue", cv2.aruco.DICT_6X6_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 12)])),
+                                                                                 ("DICT_6X6_250", dict([("cv2intValue", cv2.aruco.DICT_6X6_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 11)])),
+                                                                                 ("DICT_6X6_1000", dict([("cv2intValue", cv2.aruco.DICT_6X6_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
+                                                                                 ("DICT_7X7_50", dict([("cv2intValue", cv2.aruco.DICT_7X7_50), ("MaxIDvalue", 50 - 1), ("MinHammingDistanceBetweenCodes", 19)])),
+                                                                                 ("DICT_7X7_100", dict([("cv2intValue", cv2.aruco.DICT_7X7_100), ("MaxIDvalue", 100 - 1), ("MinHammingDistanceBetweenCodes", 18)])),
+                                                                                 ("DICT_7X7_250", dict([("cv2intValue", cv2.aruco.DICT_7X7_250), ("MaxIDvalue", 250 - 1), ("MinHammingDistanceBetweenCodes", 17)])),
+                                                                                 ("DICT_7X7_1000", dict([("cv2intValue", cv2.aruco.DICT_7X7_1000), ("MaxIDvalue", 1000 - 1), ("MinHammingDistanceBetweenCodes", 14)])),
+                                                                                 ("DICT_ARUCO_ORIGINAL", dict([("cv2intValue", cv2.aruco.DICT_ARUCO_ORIGINAL), ("MaxIDvalue", 1024 - 1), ("MinHammingDistanceBetweenCodes", 3)])),
+                                                                                 ("DICT_APRILTAG_16h5", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_16h5), ("MaxIDvalue", 30 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
+                                                                                 ("DICT_APRILTAG_16H5", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_16H5), ("MaxIDvalue", 30 - 1), ("MinHammingDistanceBetweenCodes", 5)])),
+                                                                                 ("DICT_APRILTAG_25h9", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_25h9), ("MaxIDvalue", 35 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
+                                                                                 ("DICT_APRILTAG_25H9", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_25H9), ("MaxIDvalue", 35 - 1), ("MinHammingDistanceBetweenCodes", 9)])),
+                                                                                 ("DICT_APRILTAG_36h10", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36h10), ("MaxIDvalue", 2320 - 1), ("MinHammingDistanceBetweenCodes", 10)])),
+                                                                                 ("DICT_APRILTAG_36H10", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36H10), ("MaxIDvalue", 2320 - 1), ("MinHammingDistanceBetweenCodes", 10)])),
+                                                                                 ("DICT_APRILTAG_36h11", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36h11), ("MaxIDvalue", 587 - 1), ("MinHammingDistanceBetweenCodes", 11)])),
+                                                                                 ("DICT_APRILTAG_36H11", dict([("cv2intValue", cv2.aruco.DICT_APRILTAG_36H11), ("MaxIDvalue", 587 - 1), ("MinHammingDistanceBetweenCodes", 11)]))])
 
         self.ArucoTag_TranslationVectorOfMarkerCenter_PythonList = list()
         self.ArucoTag_RotationVectorOfMarkerCenter_PythonList = list()
@@ -174,8 +178,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         
         #########################################################
         #########################################################
-        if "GUIparametersDict" in self.setup_dict:
-            self.GUIparametersDict = self.setup_dict["GUIparametersDict"]
+        if "GUIparametersDict" in self.SetupDict:
+            self.GUIparametersDict = self.SetupDict["GUIparametersDict"]
 
             #########################################################
             #########################################################
@@ -185,16 +189,6 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                 self.USE_GUI_FLAG = 0
 
             print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__: USE_GUI_FLAG: " + str(self.USE_GUI_FLAG))
-            #########################################################
-            #########################################################
-
-            #########################################################
-            #########################################################
-            if "root" in self.GUIparametersDict:
-                self.root = self.GUIparametersDict["root"]
-            else:
-                print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__: ERROR, must pass in 'root'")
-                return
             #########################################################
             #########################################################
 
@@ -329,8 +323,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "NameToDisplay_UserSet" in self.setup_dict:
-            self.NameToDisplay_UserSet = str(self.setup_dict["NameToDisplay_UserSet"])
+        if "NameToDisplay_UserSet" in self.SetupDict:
+            self.NameToDisplay_UserSet = str(self.SetupDict["NameToDisplay_UserSet"])
         else:
             self.NameToDisplay_UserSet = str(self.getPreciseSecondsTimeStampString())
 
@@ -340,8 +334,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "MainThread_TimeToSleepEachLoop" in self.setup_dict:
-            self.MainThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MainThread_TimeToSleepEachLoop", self.setup_dict["MainThread_TimeToSleepEachLoop"], 0.001, 100000)
+        if "MainThread_TimeToSleepEachLoop" in self.SetupDict:
+            self.MainThread_TimeToSleepEachLoop = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("MainThread_TimeToSleepEachLoop", self.SetupDict["MainThread_TimeToSleepEachLoop"], 0.001, 100000)
 
         else:
             self.MainThread_TimeToSleepEachLoop = 0.005
@@ -352,8 +346,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_DictType_EnglishString" in self.setup_dict:
-            ArucoTag_DictType_EnglishString_TEMP = self.setup_dict["ArucoTag_DictType_EnglishString"]
+        if "ArucoTag_DictType_EnglishString" in self.SetupDict:
+            ArucoTag_DictType_EnglishString_TEMP = self.SetupDict["ArucoTag_DictType_EnglishString"]
             
             if ArucoTag_DictType_EnglishString_TEMP in self.ArucoTag_DictType_AcceptableEnglishStringValuesDictOfDicts:
 
@@ -371,8 +365,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_MarkerLengthInMillimeters" in self.setup_dict:
-            self.ArucoTag_MarkerLengthInMillimeters = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_MarkerLengthInMillimeters", self.setup_dict["ArucoTag_MarkerLengthInMillimeters"], 0.001, 100000.0)
+        if "ArucoTag_MarkerLengthInMillimeters" in self.SetupDict:
+            self.ArucoTag_MarkerLengthInMillimeters = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_MarkerLengthInMillimeters", self.SetupDict["ArucoTag_MarkerLengthInMillimeters"], 0.001, 100000.0)
 
         else:
             self.ArucoTag_MarkerLengthInMillimeters = 25.0
@@ -383,8 +377,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_AxesToDrawLengthInMillimeters" in self.setup_dict:
-            self.ArucoTag_AxesToDrawLengthInMillimeters = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_AxesToDrawLengthInMillimeters", self.setup_dict["ArucoTag_AxesToDrawLengthInMillimeters"], 0.001, 100000.0)
+        if "ArucoTag_AxesToDrawLengthInMillimeters" in self.SetupDict:
+            self.ArucoTag_AxesToDrawLengthInMillimeters = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_AxesToDrawLengthInMillimeters", self.SetupDict["ArucoTag_AxesToDrawLengthInMillimeters"], 0.001, 100000.0)
 
         else:
             self.ArucoTag_AxesToDrawLengthInMillimeters = 5.0
@@ -395,8 +389,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda" in self.setup_dict:
-            self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", self.setup_dict["ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda"], 0.0, 1.0)
+        if "ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda" in self.SetupDict:
+            self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", self.SetupDict["ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda"], 0.0, 1.0)
 
         else:
             self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = 0.1 #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
@@ -407,8 +401,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda" in self.setup_dict:
-            self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", self.setup_dict["ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda"], 0.0, 1.0)
+        if "ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda" in self.SetupDict:
+            self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda", self.SetupDict["ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda"], 0.0, 1.0)
 
         else:
             self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda = 0.1 #new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
@@ -419,8 +413,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag" in self.setup_dict:
-            self.ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag = self.PassThrough0and1values_ExitProgramOtherwise("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", self.setup_dict["ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag"])
+        if "ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag" in self.SetupDict:
+            self.ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag = self.PassThrough0and1values_ExitProgramOtherwise("ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag", self.SetupDict["ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag"])
         else:
             self.ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag = 1
 
@@ -431,8 +425,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "OpenCVwindow_UpdateEveryNmilliseconds" in self.setup_dict:
-            self.OpenCVwindow_UpdateEveryNmilliseconds = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindow_UpdateEveryNmilliseconds", self.setup_dict["OpenCVwindow_UpdateEveryNmilliseconds"], 30, 1000))
+        if "OpenCVwindow_UpdateEveryNmilliseconds" in self.SetupDict:
+            self.OpenCVwindow_UpdateEveryNmilliseconds = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindow_UpdateEveryNmilliseconds", self.SetupDict["OpenCVwindow_UpdateEveryNmilliseconds"], 30, 1000))
 
         else:
             self.OpenCVwindow_UpdateEveryNmilliseconds = 30
@@ -443,8 +437,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ShowOpenCVwindowsFlag" in self.setup_dict:
-            self.ShowOpenCVwindowsFlag = self.PassThrough0and1values_ExitProgramOtherwise("ShowOpenCVwindowsFlag", self.setup_dict["ShowOpenCVwindowsFlag"])
+        if "ShowOpenCVwindowsFlag" in self.SetupDict:
+            self.ShowOpenCVwindowsFlag = self.PassThrough0and1values_ExitProgramOtherwise("ShowOpenCVwindowsFlag", self.SetupDict["ShowOpenCVwindowsFlag"])
 
         else:
             self.ShowOpenCVwindowsFlag = 0
@@ -455,8 +449,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "OpenCVwindowPosX" in self.setup_dict:
-            self.OpenCVwindowPosX = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindowPosX", self.setup_dict["OpenCVwindowPosX"], 0.0, 1920.0))
+        if "OpenCVwindowPosX" in self.SetupDict:
+            self.OpenCVwindowPosX = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindowPosX", self.SetupDict["OpenCVwindowPosX"], 0.0, 1920.0))
         else:
             self.OpenCVwindowPosX = 0
 
@@ -466,8 +460,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "OpenCVwindowPosY" in self.setup_dict:
-            self.OpenCVwindowPosY = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindowPosY", self.setup_dict["OpenCVwindowPosY"], 0.0, 1080.0))
+        if "OpenCVwindowPosY" in self.SetupDict:
+            self.OpenCVwindowPosY = int(self.PassThroughFloatValuesInRange_ExitProgramOtherwise("OpenCVwindowPosY", self.SetupDict["OpenCVwindowPosY"], 0.0, 1080.0))
         else:
             self.OpenCVwindowPosY = 0
 
@@ -477,8 +471,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "TkinterPreviewImageScalingFactor" in self.setup_dict:
-            self.TkinterPreviewImageScalingFactor = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("TkinterPreviewImageScalingFactor", self.setup_dict["TkinterPreviewImageScalingFactor"], 0.1, 10.0)
+        if "TkinterPreviewImageScalingFactor" in self.SetupDict:
+            self.TkinterPreviewImageScalingFactor = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("TkinterPreviewImageScalingFactor", self.SetupDict["TkinterPreviewImageScalingFactor"], 0.1, 10.0)
         else:
             self.TkinterPreviewImageScalingFactor = 1.0
 
@@ -488,8 +482,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_SavedImages_LocalDirectoryNameNoSlashes" in self.setup_dict:
-            self.ArucoTag_SavedImages_LocalDirectoryNameNoSlashes = self.setup_dict["ArucoTag_SavedImages_LocalDirectoryNameNoSlashes"]
+        if "ArucoTag_SavedImages_LocalDirectoryNameNoSlashes" in self.SetupDict:
+            self.ArucoTag_SavedImages_LocalDirectoryNameNoSlashes = self.SetupDict["ArucoTag_SavedImages_LocalDirectoryNameNoSlashes"]
         else:
             self.ArucoTag_SavedImages_LocalDirectoryNameNoSlashes = "ArucoTag_SavedImages"
 
@@ -499,8 +493,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        if "ArucoTag_SavedImages_FilenamePrefix" in self.setup_dict:
-            self.ArucoTag_SavedImages_FilenamePrefix = self.setup_dict["ArucoTag_SavedImages_FilenamePrefix"]
+        if "ArucoTag_SavedImages_FilenamePrefix" in self.SetupDict:
+            self.ArucoTag_SavedImages_FilenamePrefix = self.SetupDict["ArucoTag_SavedImages_FilenamePrefix"]
         else:
             self.ArucoTag_SavedImages_FilenamePrefix = "ArucoTag_"
 
@@ -510,10 +504,10 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
         #########################################################
         #########################################################
-        self.image_width = self.setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"]["image_width"]
-        self.image_height = self.setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"]["image_height"]
+        self.image_width = self.SetupDict["CameraStreamerClass_SetupDict"]["image_width"]
+        self.image_height = self.SetupDict["CameraStreamerClass_SetupDict"]["image_height"]
 
-        self.camera_selection_number = self.setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"]["camera_selection_number"]
+        self.camera_selection_number = self.SetupDict["CameraStreamerClass_SetupDict"]["camera_selection_number"]
         #########################################################
         #########################################################
 
@@ -525,27 +519,17 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         #########################################################
         #########################################################
 
-        ######################################################### START THE GUI HERE SO THAT WE CAN CREATE self.CameraFrame to feed to the camera object!
-        #########################################################
-        if self.USE_GUI_FLAG == 1:
-            self.StartGUI(self.root)
-            time.sleep(0.25) #Is this necessary?
-        else:
-            self.CameraFrame = None
-        #########################################################
-        #########################################################
-
         #########################################################
         #########################################################
         try:
-            self.DataStreamingFrequency_CalculatedFromMainThread_LowPassFilter_ReubenPython2and3ClassObject = LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 1),
-                                                                                                            ("UseExponentialSmoothingFilterFlag", 1),
-                                                                                                            ("ExponentialSmoothingFilterLambda", 0.05)])) ##new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
+            self.DataStreamingFrequency_CalculatedFromMainThread_LowPassFilter_ReubenPython2and3ClassObject = LowPassFilter_ReubenPython2and3Class(dict([("UseMedianFilterFlag", 0),
+                                                                                                                                                        ("UseExponentialSmoothingFilterFlag", 1),
+                                                                                                                                                        ("ExponentialSmoothingFilterLambda", 0.05)])) ##new_filtered_value = k * raw_sensor_value + (1 - k) * old_filtered_value
 
         except:
             exceptions = sys.exc_info()[0]
             print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class __init__: DataStreamingFrequency_CalculatedFromMainThread_LowPassFilter_ReubenPython2and3ClassObject, Exceptions: %s" % exceptions)
-            traceback.print_exc()
+            #traceback.print_exc()
             return
         #########################################################
         #########################################################
@@ -553,33 +537,32 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         #########################################################
         #########################################################
         try:
-            self.CameraStreamerClass_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", self.USE_GUI_FLAG),
-                                                     ("root", self.CameraFrame),
-                                                     ("EnableInternal_MyPrint_Flag", 1),
-                                                     ("NumberOfPrintLines", 10),
-                                                     ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                     ("GUI_ROW", 0),
-                                                     ("GUI_COLUMN", 0),
-                                                     ("GUI_PADX", 10),
-                                                     ("GUI_PADY", 10),
-                                                     ("GUI_ROWSPAN", 1),
-                                                     ("GUI_COLUMNSPAN", 1)])
+            self.CameraStreamerClass_GUIparametersDict = dict([("USE_GUI_FLAG", self.USE_GUI_FLAG),
+                                                                 ("EnableInternal_MyPrint_Flag", 1),
+                                                                 ("NumberOfPrintLines", 10),
+                                                                 ("UseBorderAroundThisGuiObjectFlag", 0),
+                                                                 ("GUI_ROW", 0),
+                                                                 ("GUI_COLUMN", 0),
+                                                                 ("GUI_PADX", 10),
+                                                                 ("GUI_PADY", 10),
+                                                                 ("GUI_ROWSPAN", 1),
+                                                                 ("GUI_COLUMNSPAN", 1)])
 
-            self.setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"]["GUIparametersDict"] = self.CameraStreamerClass_ReubenPython2and3ClassObject_GUIparametersDict
+            self.SetupDict["CameraStreamerClass_SetupDict"]["GUIparametersDict"] = self.CameraStreamerClass_GUIparametersDict
 
-            self.CameraStreamerClass_ReubenPython2and3ClassObject = CameraStreamerClass_ReubenPython2and3Class(self.setup_dict["CameraStreamerClass_ReubenPython2and3ClassObject_setup_dict"])
-            self.CAMERA_OPEN_FLAG = self.CameraStreamerClass_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+            self.CameraStreamerClass_Object = CameraStreamerClass_ReubenPython2and3Class(self.SetupDict["CameraStreamerClass_SetupDict"])
+            self.CameraStreamerClass_OPEN_FLAG = self.CameraStreamerClass_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
 
         except:
             exceptions = sys.exc_info()[0]
-            print("CameraStreamerClass_ReubenPython2and3ClassObject __init__: Exceptions: %s" % exceptions, 0)
+            print("CameraStreamerClass_Object __init__: Exceptions: %s" % exceptions)
             traceback.print_exc()
         #########################################################
         #########################################################
 
         #########################################################
         #########################################################
-        if self.CAMERA_OPEN_FLAG == 1:
+        if self.CameraStreamerClass_OPEN_FLAG == 1:
 
             ##########################################
             self.CameraImage_Color_Adjusted = numpy.zeros((self.image_height, self.image_width, 3), numpy.uint8)
@@ -613,10 +596,6 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
             ##########################################
 
             ##########################################
-            time.sleep(0.25)
-            ##########################################
-
-            ##########################################
             self.OBJECT_CREATED_SUCCESSFULLY_FLAG = 1
             ##########################################
 
@@ -625,77 +604,6 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
     #######################################################################################################################
     #######################################################################################################################
-
-    #######################################################################################################################
-    #######################################################################################################################
-    def __del__(self):
-        pass
-    #######################################################################################################################
-    #######################################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber):
-
-        try:
-            InputNumber_ConvertedToFloat = float(InputNumber)
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-
-        try:
-            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThrough0and1values_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be 0 or 1 (value was " +
-                          str(InputNumber_ConvertedToFloat) +
-                          "). Press any key (and enter) to exit.")
-
-                sys.exit()
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue):
-        try:
-            InputNumber_ConvertedToFloat = float(InputNumber)
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-
-        try:
-            if InputNumber_ConvertedToFloat >= RangeMinValue and InputNumber_ConvertedToFloat <= RangeMaxValue:
-                return InputNumber_ConvertedToFloat
-            else:
-                input("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
-                          InputNameString +
-                          "' must be in the range [" +
-                          str(RangeMinValue) +
-                          ", " +
-                          str(RangeMaxValue) +
-                          "] (value was " +
-                          str(InputNumber_ConvertedToFloat) + "). Press any key (and enter) to exit.")
-
-                sys.exit()
-        except:
-            exceptions = sys.exc_info()[0]
-            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
-            input("Press any key to continue")
-            sys.exit()
-    ##########################################################################################################
-    ##########################################################################################################
 
     ##########################################################################################################
     ##########################################################################################################
@@ -708,6 +616,169 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
             exceptions = sys.exc_info()[0]
             print("CreateNewDirectoryIfItDoesntExist, Exceptions: %s" % exceptions)
             traceback.print_exc()
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThrough0and1values_ExitProgramOtherwise(self, InputNameString, InputNumber, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
+        except:
+
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThrough0and1values_ExitProgramOtherwise Error. InputNumber must be a numerical value, Exceptions: %s" % exceptions)
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            if InputNumber_ConvertedToFloat == 0.0 or InputNumber_ConvertedToFloat == 1.0:
+                return InputNumber_ConvertedToFloat
+
+            else:
+
+                print("PassThrough0and1values_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be 0 or 1 (value was " +
+                      str(InputNumber_ConvertedToFloat) +
+                      ").")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+
+                else:
+                    return -1
+                ##########################
+
+            ##########################################################################################################
+
+        except:
+
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThrough0and1values_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -1
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    ##########################################################################################################
+    def PassThroughFloatValuesInRange_ExitProgramOtherwise(self, InputNameString, InputNumber, RangeMinValue, RangeMaxValue, ExitProgramIfFailureFlag=1):
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat = float(InputNumber)
+            ##########################################################################################################
+
+        except:
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. InputNumber must be a float value, Exceptions: %s" % exceptions)
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+        try:
+
+            ##########################################################################################################
+            InputNumber_ConvertedToFloat_Limited = self.LimitNumber_FloatOutputOnly(RangeMinValue, RangeMaxValue, InputNumber_ConvertedToFloat)
+
+            if InputNumber_ConvertedToFloat_Limited != InputNumber_ConvertedToFloat:
+                print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error. '" +
+                      str(InputNameString) +
+                      "' must be in the range [" +
+                      str(RangeMinValue) +
+                      ", " +
+                      str(RangeMaxValue) +
+                      "] (value was " +
+                      str(InputNumber_ConvertedToFloat) + ")")
+
+                ##########################
+                if ExitProgramIfFailureFlag == 1:
+                    sys.exit()
+                else:
+                    return -11111.0
+                ##########################
+
+            else:
+                return InputNumber_ConvertedToFloat_Limited
+            ##########################################################################################################
+
+        except:
+            ##########################################################################################################
+            exceptions = sys.exc_info()[0]
+            print("PassThroughFloatValuesInRange_ExitProgramOtherwise Error, Exceptions: %s" % exceptions)
+            traceback.print_exc()
+
+            ##########################
+            if ExitProgramIfFailureFlag == 1:
+                sys.exit()
+            else:
+                return -11111.0
+            ##########################
+
+            ##########################################################################################################
+
+        ##########################################################################################################
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
     ##########################################################################################################
     ##########################################################################################################
 
@@ -990,7 +1061,9 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         self.MainThread_StillRunningFlag = 1
 
         #########################################################
-        self.cv2ArucoDetectionParameters = cv2.aruco.DetectorParameters_create()
+        #self.cv2ArucoDetectionParameters = cv2.aruco.DetectorParameters_create() #worked for pip install opencv-contrib-python==4.5.5.64
+        self.cv2ArucoDetectionParameters = cv2.aruco.DetectorParameters() #works for pip install opencv-contrib-python==4.12.0.88
+
         self.cv2ArucoDetectionParameters.aprilTagDeglitch = 1
         self.cv2ArucoDetectionParameters.detectInvertedMarker = int(self.ArucoTag_DetectInvertedMarkersAsWellAsNormalOnesFlag)
 
@@ -1036,7 +1109,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
             ##########################################################################################################
             ##########################################################################################################
             ##########################################################################################################
-            if self.CAMERA_OPEN_FLAG == 1:
+            if self.CameraStreamerClass_OPEN_FLAG == 1:
 
                 ##########################################################################################################
                 ##########################################################################################################
@@ -1049,7 +1122,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                     ##########################################################################################################
                     ##########################################################################################################
                     ##########################################################################################################
-                    self.CAMERA_MostRecentDict = self.CameraStreamerClass_ReubenPython2and3ClassObject.GetMostRecentDataDict()
+                    self.CameraStreamerClass_MostRecentDict = self.CameraStreamerClass_Object.GetMostRecentDataDict()
                     ##########################################################################################################
                     ##########################################################################################################
                     ##########################################################################################################
@@ -1087,17 +1160,17 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                     ##########################################################################################################
                     ##########################################################################################################
                     ##########################################################################################################
-                    if "Time" in self.CAMERA_MostRecentDict:
+                    if "Time" in self.CameraStreamerClass_MostRecentDict:
 
                         ##########################################################################################################
                         ##########################################################################################################
                         ##########################################################################################################
-                        self.CAMERA_MostRecentDict_OriginalImage = self.CAMERA_MostRecentDict["OriginalImage"]
-                        #print("self.CAMERA_MostRecentDict_OriginalImage shape = " + str(numpy.shape(self.CAMERA_MostRecentDict_OriginalImage)))
+                        self.CameraStreamerClass_MostRecentDict_OriginalImage = self.CameraStreamerClass_MostRecentDict["OriginalImage"]
+                        #print("self.CameraStreamerClass_MostRecentDict_OriginalImage shape = " + str(numpy.shape(self.CameraStreamerClass_MostRecentDict_OriginalImage)))
 
-                        self.CAMERA_MostRecentDict_Time = self.CAMERA_MostRecentDict["Time"]
-                        self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix = self.CAMERA_MostRecentDict["CameraCalibration_Kmatrix_CameraIntrinsicsMatrix"]
-                        self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients = self.CAMERA_MostRecentDict["CameraCalibration_Darray_DistortionCoefficients"]
+                        self.CameraStreamerClass_MostRecentDict_Time = self.CameraStreamerClass_MostRecentDict["Time"]
+                        self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix = self.CameraStreamerClass_MostRecentDict["CameraCalibration_Kmatrix_CameraIntrinsicsMatrix"]
+                        self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients = self.CameraStreamerClass_MostRecentDict["CameraCalibration_Darray_DistortionCoefficients"]
                         ##########################################################################################################
                         ##########################################################################################################
                         ##########################################################################################################
@@ -1105,17 +1178,17 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                         ##########################################################################################################
                         ##########################################################################################################
                         ##########################################################################################################
-                        if self.CAMERA_MostRecentDict_Time != self.CAMERA_MostRecentDict_Time_LAST: #New data
-
-                            ##########################################################################################################
-                            ##########################################################################################################
-                            self.CAMERA_MostRecentDict_Time_LAST = self.CAMERA_MostRecentDict_Time
-                            ##########################################################################################################
-                            ##########################################################################################################
+                        if self.CameraStreamerClass_MostRecentDict_Time != self.CameraStreamerClass_MostRecentDict_Time_LAST: #New data
 
                             ##########################################################################################################
                             ##########################################################################################################
-                            #self.CameraImage_ConvertedToGray = cv2.cvtColor(self.CAMERA_MostRecentDict_OriginalImage.copy(), cv2.COLOR_BGR2GRAY)
+                            self.CameraStreamerClass_MostRecentDict_Time_LAST = self.CameraStreamerClass_MostRecentDict_Time
+                            ##########################################################################################################
+                            ##########################################################################################################
+
+                            ##########################################################################################################
+                            ##########################################################################################################
+                            #self.CameraImage_ConvertedToGray = cv2.cvtColor(self.CameraStreamerClass_MostRecentDict_OriginalImage.copy(), cv2.COLOR_BGR2GRAY)
                             ##########################################################################################################
                             ##########################################################################################################
 
@@ -1123,7 +1196,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                             ##########################################################################################################
                             '''
                             #To perform Histogram Equalization on a color image, do it on each color channel independently and then add the results.
-                            B, G, R = cv2.split(self.CAMERA_MostRecentDict_OriginalImage.copy())
+                            B, G, R = cv2.split(self.CameraStreamerClass_MostRecentDict_OriginalImage.copy())
                             B = cv2.equalizeHist(B)
                             G = cv2.equalizeHist(G)
                             R = cv2.equalizeHist(R)
@@ -1142,19 +1215,30 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                             beta = 0  # Brightness control (0-100)
 
                             #self.CameraImage_ConvertedToGray = cv2.convertScaleAbs(self.CameraImage_ConvertedToGray, alpha=alpha, beta=beta)
-                            self.CameraImage_Color_Adjusted = cv2.convertScaleAbs(self.CAMERA_MostRecentDict_OriginalImage, alpha=alpha, beta=beta)
+                            self.CameraImage_Color_Adjusted = cv2.convertScaleAbs(self.CameraStreamerClass_MostRecentDict_OriginalImage, alpha=alpha, beta=beta)
                             ##########################################################################################################
                             ##########################################################################################################
 
+                            '''
                             ##########################################################################################################
-                            ##########################################################################################################
+                            ########################################################################################################## worked for pip install opencv-contrib-python==4.5.5.64
                             #The actual DETECTION takes place here. Can run on either gray or color images, but the detector will automatically convert color to gray.
                             self.DetectedArucoTags_CornersList_ImageCoordinates, self.DetectedArucoTags_IDsList, self.DetectedArucoTags_RejectedImagePoints = cv2.aruco.detectMarkers(self.CameraImage_Color_Adjusted,
-                                                                                        cv2.aruco.Dictionary_get(self.ArucoTag_DictType_cv2Int),
-                                                                                        parameters=self.cv2ArucoDetectionParameters,
-                                                                                        cameraMatrix=self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
-                                                                                        distCoeff=self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
+                                                                                                                                                                cv2.aruco.Dictionary_get(self.ArucoTag_DictType_cv2Int),
+                                                                                                                                                                parameters=self.cv2ArucoDetectionParameters,
+                                                                                                                                                                cameraMatrix=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                                                                                                                                distCoeff=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
 
+                            ##########################################################################################################
+                            ##########################################################################################################
+                            '''
+
+                            ########################################################################################################## works for opencv-contrib-python==4.12.0.88
+                            ##########################################################################################################
+                            ArucoDict = cv2.aruco.getPredefinedDictionary(self.ArucoTag_DictType_cv2Int)
+                            ArucoDetectorObj = cv2.aruco.ArucoDetector(ArucoDict, self.cv2ArucoDetectionParameters)
+
+                            self.DetectedArucoTags_CornersList_ImageCoordinates, self.DetectedArucoTags_IDsList, self.DetectedArucoTags_RejectedImagePoints = ArucoDetectorObj.detectMarkers(self.CameraImage_Color_Adjusted)
                             ##########################################################################################################
                             ##########################################################################################################
 
@@ -1196,8 +1280,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
                                     ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray, ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray, MarkerPoints = cv2.aruco.estimatePoseSingleMarkers(self.DetectedArucoTags_CornersList_ImageCoordinates[Index],
                                                                                                    self.ArucoTag_MarkerLengthInMillimeters,
-                                                                                                   self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
-                                                                                                   self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
+                                                                                                   self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                                                                   self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)
 
                                     #Not sure why we have to include the [0] after [0]
                                     ArucoTag_TranslationVectorOfMarkerCenter_PythonList = ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray[0][0].tolist()
@@ -1214,31 +1298,31 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                     #########################################################
                                     if ArucoMarker_ID_Str not in self.DetectedArucoTag_InfoDict: #Marker ID hasn't been detected previously
 
-                                        LowPassFilter_DictOfVariableFilterSettings = dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])),
-                                                                                            ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])),
-                                                                                            ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", dict([("UseMedianFilterFlag", 1), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])) ])
+                                        LowPassFilter_DictOfVariableFilterSettings = dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_TranslationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])),
+                                                                                            ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])),
+                                                                                            ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", dict([("UseMedianFilterFlag", 0), ("UseExponentialSmoothingFilterFlag", 1),("ExponentialSmoothingFilterLambda", self.ArucoTag_RotationVectorOfMarkerCenter_ExponentialSmoothingFilterLambda)])) ])
 
                                         SetupDict = dict([("DictOfVariableFilterSettings", LowPassFilter_DictOfVariableFilterSettings)])
 
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str] = dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
-                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
-                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList", [0.0]*3),
-                                                                        ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag", 0),
-                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
-                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList),
-                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList),
-                                                                        ("ArucoTag_DetectionTimeInMilliseconds", int(1000.0*self.CAMERA_MostRecentDict_Time)),
-                                                                        ("ArucoTag_DetectedArucoTags_CornersList_ImageCoordinates", self.DetectedArucoTags_CornersList_ImageCoordinates[Index]),
-                                                                        ("ArucoTag_DetectedArucoTags_CenterOfMarker_ImageCoordinates", self.DetectedArucoTags_CenterOfMarker_ImageCoordinates[Index]),
-                                                                        ("LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject", LowPassFilterForDictsOfLists_ReubenPython2and3Class(SetupDict))])
+                                                                                                    ("ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
+                                                                                                    ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList", [0.0]*3),
+                                                                                                    ("ArucoTag_TranslationVectorOfMarkerCenter_ZeroOffset_PythonList_NeedsToBeSetFlag", 0),
+                                                                                                    ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
+                                                                                                    ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList),
+                                                                                                    ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInRadians_PythonList),
+                                                                                                    ("ArucoTag_DetectionTimeInMilliseconds", int(1000.0*self.CameraStreamerClass_MostRecentDict_Time)),
+                                                                                                    ("ArucoTag_DetectedArucoTags_CornersList_ImageCoordinates", self.DetectedArucoTags_CornersList_ImageCoordinates[Index]),
+                                                                                                    ("ArucoTag_DetectedArucoTags_CenterOfMarker_ImageCoordinates", self.DetectedArucoTags_CenterOfMarker_ImageCoordinates[Index]),
+                                                                                                    ("LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject", LowPassFilterForDictsOfLists_ReubenPython2and3Class(SetupDict))])
 
                                         #print("self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]: " + str(self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]))
 
                                     else: #we HAVE seen this marker ID before
 
                                         Results = self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["LowPassFilterForDictsOfLists_ReubenPython2and3ClassObject"].AddDataDictFromExternalProgram(dict([("ArucoTag_TranslationVectorOfMarkerCenter_PythonList", ArucoTag_TranslationVectorOfMarkerCenter_PythonList),
-                                                                                                                                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
-                                                                                                                                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList)]))
+                                                                                                                                                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList", ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList),
+                                                                                                                                                                                                        ("ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList", ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList)]))
 
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_NeverZeroed_PythonList"] = list(Results["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"]["Filtered_MostRecentValuesList"])
 
@@ -1248,7 +1332,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                         #########################################################
 
                                         #print(self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_TranslationVectorOfMarkerCenter_PythonList"])
-                                        self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_DetectionTimeInMilliseconds"] = int(1000.0*self.CAMERA_MostRecentDict_Time)
+                                        self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_DetectionTimeInMilliseconds"] = int(1000.0*self.CameraStreamerClass_MostRecentDict_Time)
 
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList"] = Results["ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_PythonList"]["Filtered_MostRecentValuesList"]
                                         self.DetectedArucoTag_InfoDict[ArucoMarker_ID_Str]["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList"] = Results["ArucoTag_RotationVectorOfMarkerCenter_EulerAnglesXYZrollPitchYawInDegrees_PythonList"]["Filtered_MostRecentValuesList"]
@@ -1263,16 +1347,34 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                     cv2.aruco.drawDetectedMarkers(CameraImage_Color_ArucoDetected_TEMP, self.DetectedArucoTags_CornersList_ImageCoordinates) #Render perimeter of tag
                                     cv2.aruco.drawDetectedMarkers(CameraImage_Gray_ArucoDetected_TEMP, self.DetectedArucoTags_CornersList_ImageCoordinates) #Render perimeter of tag
 
+                                    '''
+                                    #worked for pip install opencv-contrib-python==4.5.5.64
                                     cv2.aruco.drawAxis(image=CameraImage_Color_ArucoDetected_TEMP,
-                                                       cameraMatrix=self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
-                                                       distCoeffs=self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
+                                                       cameraMatrix=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                       distCoeffs=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
                                                        rvec=ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray,
                                                        tvec=ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray,
                                                        length=self.ArucoTag_AxesToDrawLengthInMillimeters)
 
                                     cv2.aruco.drawAxis(image=CameraImage_Gray_ArucoDetected_TEMP,
-                                                       cameraMatrix=self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
-                                                       distCoeffs=self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
+                                                       cameraMatrix=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                       distCoeffs=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
+                                                       rvec=ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray,
+                                                       tvec=ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray,
+                                                       length=self.ArucoTag_AxesToDrawLengthInMillimeters)
+                                    '''
+
+                                    # works for pip install opencv-contrib-python==4.12.0.88
+                                    cv2.drawFrameAxes(image=CameraImage_Color_ArucoDetected_TEMP,
+                                                        cameraMatrix=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                        distCoeffs=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
+                                                        rvec=ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray,
+                                                        tvec=ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray,
+                                                        length=self.ArucoTag_AxesToDrawLengthInMillimeters)
+
+                                    cv2.drawFrameAxes(image=CameraImage_Gray_ArucoDetected_TEMP,
+                                                       cameraMatrix=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix,
+                                                       distCoeffs=self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients,
                                                        rvec=ArucoTag_RotationVectorOfMarkerCenter_RodriguesAxisAngle_NumpyArray,
                                                        tvec=ArucoTag_TranslationVectorOfMarkerCenter_NumpyArray,
                                                        length=self.ArucoTag_AxesToDrawLengthInMillimeters)
@@ -1288,17 +1390,17 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                                 ########################################################################################################## unicorn
                                 self.MostRecentDataDict_BlockFromBeingReadFlag = 1
 
-                                self.MostRecentDataDict = dict([("Time", int(1000.0*self.CAMERA_MostRecentDict_Time)),#self.CurrentTime_CalculatedFromMainThread),
+                                self.MostRecentDataDict = dict([("Time", int(1000.0*self.CameraStreamerClass_MostRecentDict_Time)),#self.CurrentTime_CalculatedFromMainThread),
                                                                 ("Frequency", self.DataStreamingFrequency_CalculatedFromMainThread),
                                                                 ("DetectedArucoTag_InfoDict", self.DetectedArucoTag_InfoDict),
                                                                 ("SaveImageFlag", self.SaveImageFlag),
                                                                 ("AcceptNewImagesForSavingFlag", self.AcceptNewImagesForSavingFlag),
                                                                 ("ImagesToBeSaveQueue_qsize", self.ImagesToBeSaveQueue.qsize()),
                                                                 ("SavedImageFrameCounter", self.SavedImageFrameCounter),
-                                                                ("OriginalImage", self.CAMERA_MostRecentDict_OriginalImage),
+                                                                ("OriginalImage", self.CameraStreamerClass_MostRecentDict_OriginalImage),
                                                                 ("CameraImage_Color_ArucoDetected", self.CameraImage_Color_ArucoDetected),
-                                                                ("CameraCalibration_Kmatrix_CameraIntrinsicsMatrix", self.CAMERA_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix),
-                                                                ("CameraCalibration_Darray_DistortionCoefficients", self.CAMERA_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)])
+                                                                ("CameraCalibration_Kmatrix_CameraIntrinsicsMatrix", self.CameraStreamerClass_MostRecentDict_CameraCalibration_Kmatrix_CameraIntrinsicsMatrix),
+                                                                ("CameraCalibration_Darray_DistortionCoefficients", self.CameraStreamerClass_MostRecentDict_CameraCalibration_Darray_DistortionCoefficients)])
 
                                 self.MostRecentDataDict_LAST = self.MostRecentDataDict
 
@@ -1311,7 +1413,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                             ##########################################################################################################
                             ##########################################################################################################
                             else:
-                                self.CameraImage_Color_ArucoDetected = self.CAMERA_MostRecentDict_OriginalImage.copy()
+                                self.CameraImage_Color_ArucoDetected = self.CameraStreamerClass_MostRecentDict_OriginalImage.copy()
                                 self.CameraImage_Gray_ArucoDetected = self.CameraImage_ConvertedToGray.copy()
                                 #print("No Aruco tags detected!")
                             ##########################################################################################################
@@ -1320,7 +1422,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                             ##########################################################################################################
                             ##########################################################################################################
                             if self.AcceptNewImagesForSavingFlag == 1:
-                                self.ImagesToBeSaveQueue.put(dict([("TIMEms", int(1000.0*self.CAMERA_MostRecentDict_Time)),
+                                self.ImagesToBeSaveQueue.put(dict([("TIMEms", int(1000.0*self.CameraStreamerClass_MostRecentDict_Time)),
                                                                    ("ImageToWrite", self.CameraImage_Color_ArucoDetected)]))
 
                                 if self.SaveSingleSnapshotOrContinuousStreamOfImages_state == 0:
@@ -1395,7 +1497,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         ##########################################################################################################
         ##########################################################################################################
 
-        self.CameraStreamerClass_ReubenPython2and3ClassObject.ExitProgram_Callback()
+        self.CameraStreamerClass_Object.ExitProgram_Callback()
         time.sleep(5.0)
 
         self.MyPrint_WithoutLogFile("Finished MainThread for ArucoTagDetectionFromCameraFeed_ReubenPython3Class object.")
@@ -1519,7 +1621,7 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                 ##########################################################################################################
 
                 ##########################################################################################################
-                if self.CAMERA_OPEN_FLAG == 1:
+                if self.CameraStreamerClass_OPEN_FLAG == 1:
 
                     ImageToShow = self.CameraImage_ToBeDisplayedInPreviewScreens
 
@@ -1574,26 +1676,14 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
     ##########################################################################################################
     ##########################################################################################################
-    def StartGUI(self, GuiParent):
+    def CreateGUIobjects(self, TkinterParent):
 
-        #self.GUI_Thread_ThreadingObject = threading.Thread(target=self.GUI_Thread, args=(GuiParent,))
-        #self.GUI_Thread_ThreadingObject.setDaemon(True) #Should mean that the GUI thread is destroyed automatically when the main thread is destroyed.
-        #self.GUI_Thread_ThreadingObject.start()
-
-        self.GUI_Thread(GuiParent)
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
-    def GUI_Thread(self, parent):
-
-        print("Starting the GUI_Thread for object.")
+        print("ArucoTagDetectionFromCameraFeed_ReubenPython3Class, CreateGUIobjects event fired.")
 
         ################################################
         ################################################
-        self.root = parent
-        self.parent = parent
+        self.root = TkinterParent
+        self.parent = TkinterParent
         ################################################
         ################################################
 
@@ -1729,6 +1819,13 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
         ################################################
         ################################################
 
+        #################################################
+        #################################################
+        if self.CameraStreamerClass_OPEN_FLAG == 1:
+            self.CameraStreamerClass_Object.CreateGUIobjects(TkinterParent=self.CameraFrame)
+        #################################################
+        #################################################
+
         ################################################
         ################################################
         self.PrintToGui_Label = Label(self.ArucoTagDetectionControlsFrame, text="PrintToGui_Label", width=150)
@@ -1860,8 +1957,8 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
                     #######################################################
 
                     #########################################################
-                    if self.CAMERA_OPEN_FLAG == 1:
-                        self.CameraStreamerClass_ReubenPython2and3ClassObject.GUI_update_clock()
+                    if self.CameraStreamerClass_OPEN_FLAG == 1:
+                        self.CameraStreamerClass_Object.GUI_update_clock()
                     #########################################################
 
                 except:
@@ -1882,7 +1979,43 @@ class ArucoTagDetectionFromCameraFeed_ReubenPython3Class(Frame): #Subclass the T
 
     ##########################################################################################################
     ##########################################################################################################
-    
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def LimitNumber_IntOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = int(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    def LimitNumber_FloatOutputOnly(self, min_val, max_val, test_val):
+        if test_val > max_val:
+            test_val = max_val
+
+        elif test_val < min_val:
+            test_val = min_val
+
+        else:
+            test_val = test_val
+
+        test_val = float(test_val)
+
+        return test_val
+    ##########################################################################################################
+    ##########################################################################################################
+
     ##########################################################################################################
     ##########################################################################################################
     def LimitTextEntryInput(self, min_val, max_val, test_val, TextEntryObject):

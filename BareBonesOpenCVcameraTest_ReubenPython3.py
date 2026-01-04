@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision I, 02/02/2025
+Software Revision J, 12/30/2025
 
-Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Bullseye (Backend = "CAP_ANY", Camera = ELP USB).
+Verified working on: Python 3.12/13 for Windows 10/11 64-bit (Backend = "CAP_DSHOW") and Raspberry Pi Bullseye (Backend = "CAP_ANY").
 '''
 
 __author__ = 'reuben.brewer'
@@ -16,10 +16,38 @@ __author__ = 'reuben.brewer'
 #########################################################
 import os
 import sys
+import platform
 import traceback
 import cv2
 print("OpenCV version: " + str(cv2.__version__))
 #########################################################
+
+##########################################################################################################
+##########################################################################################################
+def GetMyPlatform():
+    my_platform = "other"
+
+    if platform.system() == "Linux":
+
+        if "raspberrypi" in platform.uname():  # os.uname() doesn't work in windows
+            my_platform = "pi"
+        else:
+            my_platform = "linux"
+
+    elif platform.system() == "Windows":
+        my_platform = "windows"
+
+    elif platform.system() == "Darwin":
+        my_platform = "mac"
+
+    else:
+        my_platform = "other"
+
+    print("The OS platform is: " + my_platform)
+
+    return my_platform
+##########################################################################################################
+##########################################################################################################
 
 ##########################################################################################################
 ##########################################################################################################
@@ -78,14 +106,22 @@ def GetCameraSettings(CVcapture, PrintForDebuggingFlag=0):
 ##########################################################################################################
 try:
 
+    MyOSplatform = GetMyPlatform()
+
     ##########################################################################################################
     OpenCVsupportedBackendsDictWithEnglishNamesAsKeys = OpenCVgetSupportedBackends()
     print("OpenCVsupportedBackendsDictWithEnglishNamesAsKeys: " + str(OpenCVsupportedBackendsDictWithEnglishNamesAsKeys))
     ##########################################################################################################
 
     ##########################################################################################################
-    CameraNumberInteger = 0
-    OpenCVbackendToUseEnglishName = "CAP_ANY"
+    CameraNumberInteger = 1
+
+    if MyOSplatform == "windows":
+        OpenCVbackendToUseEnglishName = "CAP_DSHOW"
+    elif MyOSplatform == "raspberrypi":
+        OpenCVbackendToUseEnglishName = "CAP_ANY"
+    else:
+        OpenCVbackendToUseEnglishName = "CAP_ANY"
 
     cv2.namedWindow("CameraPreviewWindow")
     CVcapture = cv2.VideoCapture(CameraNumberInteger, OpenCVsupportedBackendsDictWithEnglishNamesAsKeys[OpenCVbackendToUseEnglishName])

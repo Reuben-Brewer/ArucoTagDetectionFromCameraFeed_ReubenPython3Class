@@ -3,10 +3,10 @@
     "USE_ArucoTag_FLAG":1,
     "USE_CSVdataLogger_FLAG":1,
     "USE_MyPlotterPureTkinterStandAloneProcess_FLAG":1,
-    "USE_MyPrint_FLAG":1,
     "USE_UDPdataExchanger_FLAG": 1,
     "USE_GUI_FLAG":1,
     "USE_KEYBOARD_FLAG":1,
+    "USE_CreateAndSaveArucoTagImages_FLAG": 0,
     "USE_PrintUDPdataForDebuggingFlag":0
 }
 

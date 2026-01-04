@@ -1,7 +1,7 @@
 {
-    "camera_user_notes": "Don't go larger than 1280x720 for checkerboard calibration. -6 for pinhole, -10 for non-pinhole. Windows Backend = CAP_MSMF",
+    "camera_user_notes": "Don't go larger than 1280x720 for checkerboard calibration. -6 for pinhole, -10 for non-pinhole. Windows Backend = CAP_DSHOW",
     "camera_TkinterPreviewImageScalingFactor": 1.0,
-    "camera_selection_number": 0,
+    "camera_selection_number": 1,
     "camera_Dshow_EnglishName": "HD USB Camera",
     "CameraCaptureThread_TimeToSleepEachLoop": 0.030,
     "CameraEncodeThread_TimeToSleepEachLoop": 0.030,
@@ -14,8 +14,8 @@
     "CameraSetting_Autoexposure": 1,
     "CameraSetting_exposure": -11,
     "CameraSetting_gain": 0,
-    "CameraSetting_brightness": 0,
-    "CameraSetting_contrast": 32,
+    "CameraSetting_brightness": 115,
+    "CameraSetting_contrast": 165,
     "CameraSetting_saturation": 60,
     "CameraSetting_hue": 0,
     "DrawCircleAtImageCenterFlag": 0,
@@ -40,5 +40,5 @@
     "OpenCVwindowPosY":0,
     "OpenCVwindow_UpdateEveryNmilliseconds":30,
     "test_program_for_ArucoTagDetectionFromCameraFeed_ReubenPython3Class_MainThread_TimeToSleepEachLoop": 0.015,
-    "OpenCVbackendToUseEnglishName":"CAP_ANY"
+    "OpenCVbackendToUseEnglishName":"CAP_DSHOW"
 }
